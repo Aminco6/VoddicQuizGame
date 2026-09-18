@@ -345,7 +345,20 @@
   </div>
 
   <!-- LOGIN -->
-  <div class="view" id="view-login">
+
+
+  <!-- LOGIN -->
+<div class="view" id="view-login">
+    <div class="top-row">
+        <button class="back-btn show" onclick="showView('view-landing')">←</button>
+        <div style="margin-left:auto;">
+            <button class="link-btn" onclick="handleLogout()" style="font-size:12px;">Logout</button>
+        </div>
+    </div>
+    <!-- rest of login form stays the same -->
+
+
+ 
     <div class="top-row"><button class="back-btn" onclick="showView('view-landing')">←</button></div>
     <div class="brand-row"><div class="brand-cube">?</div><div class="brand-name"><span class="quiz">Quiz</span><span class="win">Win</span></div></div>
     <div class="heading-block"><div class="heading">Welcome back</div><div class="subheading">Log in to keep climbing the leaderboard.</div></div>
@@ -381,28 +394,92 @@
 
 <!-- BIOMETRIC SETUP (FORCED AFTER SIGNUP) -->
 <div class="view" id="view-biometric-setup">
-    <div class="top-row"><button class="back-btn hidden">←</button></div>
+    <div class="top-row">
+        <button class="back-btn show" onclick="handleLogout()">←</button>
+    </div>
     <div class="bio-icon-wrap">🔐</div>
     <div class="heading-block" style="margin-top:10px;">
         <div class="heading">Secure Your Quiz Account</div>
         <div class="subheading">Fingerprint is REQUIRED to start quizzes and submit answers. This prevents cheating.</div>
     </div>
     <div class="form" style="margin-top:30px;">
-       <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
+        <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
         <p class="bio-status" id="bio-status">Your fingerprint stays on your device only. Never uploaded.</p>
         <div class="bio-success" id="bio-success"></div>
         <div class="message" id="bio-msg"></div>
+        
+        <!-- NEW: Navigation buttons -->
+        <button class="secondary-btn" onclick="handleLogout()" style="margin-top:20px;">
+            ← Back to Login
+        </button>
+        
         <p style="color:var(--error);text-align:center;font-size:11px;margin-top:16px;">
             ⚠️ Fingerprint is mandatory. You cannot play quizzes without it.
         </p>
+
+
+<div class="form" style="margin-top:30px;">
+    <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
+    <p class="bio-status" id="bio-status">Your fingerprint stays on your device only. Never uploaded.</p>
+    <div class="bio-success" id="bio-success"></div>
+    <div class="message" id="bio-msg"></div>
+    
+    <!-- Primary action: back to login -->
+    <button class="secondary-btn" onclick="handleLogout()" style="margin-top:16px;">
+        ← Back to Login
+    </button>
+    
+    <!-- Secondary action: skip biometric (with warning) -->
+    <button class="secondary-btn skip" onclick="skipBiometric()" style="margin-top:8px;">
+        Continue without fingerprint (not recommended)
+    </button>
+    
+    <p style="color:var(--error);text-align:center;font-size:11px;margin-top:16px;">
+        ⚠️ You won't be able to play quizzes without fingerprint.
+    </p>
+</div>
+
+
+
     </div>
 </div>
 
 
 
 
+
+
+
+
+
+
+
   <!-- HOME -->
   <div class="view" id="view-home">
+
+
+
+<div class="view" id="view-home">
+    <!-- Add this banner if user has no biometric -->
+    <div id="biometric-banner" style="display:none; background:rgba(255,71,87,0.1); border:1px solid rgba(255,71,87,0.3); border-radius:14px; padding:14px; margin-top:16px;">
+        <p style="color:#ff6b7a; font-size:12px; font-weight:600; margin-bottom:8px;">
+            ⚠️ Fingerprint not set up
+        </p>
+        <p style="color:var(--muted); font-size:11px; margin-bottom:10px;">
+            You need fingerprint to play quizzes
+        </p>
+        <button class="secondary-btn" onclick="showView('view-biometric-setup')" style="font-size:12px; padding:10px;">
+            Set Up Fingerprint
+        </button>
+    </div>
+    
+    <div class="home-header">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="balance-badge" id="balance">$0.00</div>
+    </div>
+    <!-- rest stays the same -->
+</div>
+
     <div class="home-header">
       <div class="user-avatar" id="user-avatar">U</div>
       <div class="balance-badge" id="balance">$0.00</div>
@@ -453,7 +530,7 @@ function setLoading(btnId, loading) {
   }
 }
 
-async function api(endpoint, method = 'GET', data = null) {
+async function api(endpoint, method = 'GET', data = null, retry = true) {
   const headers = { 'Content-Type': 'application/json' };
   if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
   
@@ -463,12 +540,50 @@ async function api(endpoint, method = 'GET', data = null) {
   const res = await fetch(`${API_BASE}${endpoint}`, config);
   const json = await res.json();
   
+  // If token expired, refresh it and retry once
+  if (res.status === 401 && json.code === 'token_not_valid' && retry) {
+    console.log('🔄 Token expired, refreshing...');
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return api(endpoint, method, data, false); // retry once
+    } else {
+      // Refresh failed - force logout
+      handleLogout();
+      throw new Error('Session expired. Please login again.');
+    }
+  }
+  
   if (!res.ok) {
     const err = typeof json === 'object' ? JSON.stringify(json) : (json.error || 'Request failed');
     throw new Error(err);
   }
   return json;
 }
+
+async function refreshAccessToken() {
+  if (!refreshToken) return false;
+  
+  try {
+    const res = await fetch(`${API_BASE.replace('/auth', '/auth/token/refresh/')}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken })
+    });
+    
+    if (!res.ok) return false;
+    
+    const data = await res.json();
+    accessToken = data.access;
+    localStorage.setItem('quizwin_access', data.access);
+    console.log('✅ Token refreshed');
+    return true;
+  } catch (e) {
+    console.error('Token refresh failed:', e);
+    return false;
+  }
+}
+
+
 
 function saveTokens(data) {
   accessToken = data.access;
@@ -736,6 +851,13 @@ async function loadHome() {
     avatar.textContent = (user.first_name || 'U')[0].toUpperCase();
     document.getElementById('welcome-msg').textContent = `Welcome, ${user.first_name || 'Player'}!`;
     
+    // Show biometric warning banner if not set up
+    const banner = document.getElementById('biometric-banner');
+    if (banner) {
+      banner.style.display = biometricSet ? 'none' : 'block';
+    }
+    
+   
     const res = await fetch(CATEGORIES_API, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
@@ -769,14 +891,18 @@ function startQuiz(catId, catName) {
 }
 
 function handleLogout() {
+  // Clear ALL auth data
   localStorage.removeItem('quizwin_access');
   localStorage.removeItem('quizwin_refresh');
   localStorage.removeItem('quizwin_biometric');
   localStorage.removeItem('quizwin_credential_id');
   localStorage.removeItem('quizwin_user_email');
+  
   accessToken = null;
   refreshToken = null;
   biometricSet = false;
+  
+  console.log('👋 Logged out');
   showView('view-landing');
 }
 
@@ -811,6 +937,17 @@ if (accessToken) {
 console.log('QuizWin loaded ✅');
 console.log('API_BASE:', API_BASE);
 console.log('Platform authenticator support:', !!window.PublicKeyCredential);
+
+
+function skipBiometric() {
+  console.log('⚠️ User skipped biometric setup');
+  showMsg('bio', '⚠️ Skipping biometric. You can set it up later from the home page.', 'error');
+  localStorage.setItem('quizwin_biometric', 'false');
+  biometricSet = false;
+  setTimeout(() => loadHome(), 800);
+}
+
+
 </script>
 </body>
 </html>
