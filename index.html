@@ -375,6 +375,10 @@
     </form>
   </div>
 
+
+
+
+
 <!-- BIOMETRIC SETUP (FORCED AFTER SIGNUP) -->
 <div class="view" id="view-biometric-setup">
     <div class="top-row"><button class="back-btn hidden">←</button></div>
@@ -384,7 +388,7 @@
         <div class="subheading">Fingerprint is REQUIRED to start quizzes and submit answers. This prevents cheating.</div>
     </div>
     <div class="form" style="margin-top:30px;">
-        <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
+       <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
         <p class="bio-status" id="bio-status">Your fingerprint stays on your device only. Never uploaded.</p>
         <div class="bio-success" id="bio-success"></div>
         <div class="message" id="bio-msg"></div>
@@ -393,6 +397,9 @@
         </p>
     </div>
 </div>
+
+
+
 
   <!-- HOME -->
   <div class="view" id="view-home">
@@ -410,13 +417,8 @@
 
 <script>
 // ===================== CONFIG =====================
-
-
-// ===================== CONFIG =====================
-// Replace with your actual trycloudflare URL
 const API_BASE = 'https://connectapi.voddic.com.ng/api/v1/auth';
 const CATEGORIES_API = 'https://connectapi.voddic.com.ng/api/v1/categories';
-
 
 let accessToken = localStorage.getItem('quizwin_access');
 let refreshToken = localStorage.getItem('quizwin_refresh');
@@ -475,13 +477,31 @@ function saveTokens(data) {
   localStorage.setItem('quizwin_refresh', data.refresh);
 }
 
+// Convert ArrayBuffer to Base64URL (required for WebAuthn)
+function bufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let str = '';
+  for (let i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64urlToBuffer(base64url) {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4));
+  const binary = atob(base64 + pad);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
 // ===================== AUTH =====================
 async function handleSignup(e) {
   e.preventDefault();
   setLoading('signup-btn', true);
   
+  const email = document.getElementById('signup-email').value;
   const data = {
-    email: document.getElementById('signup-email').value,
+    email: email,
     full_name: document.getElementById('signup-name').value,
     password: document.getElementById('signup-password').value,
     password2: document.getElementById('signup-password').value
@@ -490,8 +510,8 @@ async function handleSignup(e) {
   try {
     const result = await api('/signup/', 'POST', data);
     saveTokens(result.tokens);
+    localStorage.setItem('quizwin_user_email', email);
     showMsg('signup', 'Account created!', 'success');
-    // FORCE biometric setup after signup
     setTimeout(() => showView('view-biometric-setup'), 800);
   } catch (e) {
     showMsg('signup', e.message.replace(/[{}"]/g, '').substring(0, 200), 'error');
@@ -503,21 +523,21 @@ async function handleLogin(e) {
   e.preventDefault();
   setLoading('login-btn', true);
   
+  const email = document.getElementById('login-email').value;
   const data = {
-    email: document.getElementById('login-email').value,
+    email: email,
     password: document.getElementById('login-password').value
   };
   
   try {
     const result = await api('/login/', 'POST', data);
     saveTokens(result.tokens);
+    localStorage.setItem('quizwin_user_email', email);
     
-    if (result.has_webauthn) {
-      // Has biometric - go straight to home
+    if (result.has_biometric || result.has_webauthn) {
       showMsg('login', 'Welcome back!', 'success');
       setTimeout(loadHome, 500);
     } else {
-      // No biometric yet - force setup
       showMsg('login', 'Please set up biometric security', 'success');
       setTimeout(() => showView('view-biometric-setup'), 500);
     }
@@ -542,7 +562,7 @@ async function handleGoogleAuth() {
       try {
         const result = await api('/google/', 'POST', { access_token: response.credential });
         saveTokens(result.tokens);
-        if (result.is_new || !result.has_webauthn) {
+        if (result.is_new || (!result.has_biometric && !result.has_webauthn)) {
           showView('view-biometric-setup');
         } else {
           setTimeout(loadHome, 500);
@@ -561,91 +581,156 @@ async function handleBiometricLogin() {
     return;
   }
   
+  const storedCredentialId = localStorage.getItem('quizwin_credential_id');
+  if (!storedCredentialId) {
+    showMsg('login', 'No fingerprint registered on this device. Please log in with password first.', 'error');
+    return;
+  }
+  
   try {
-    const credential = await navigator.credentials.get({
+    const assertion = await navigator.credentials.get({
       publicKey: {
-        challenge: new Uint8Array(32),
-        allowCredentials: [],
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{
+          id: base64urlToBuffer(storedCredentialId),
+          type: 'public-key',
+          transports: ['internal']
+        }],
         userVerification: 'required',
-        timeout: 60000
+        timeout: 60000,
+        rpId: 'voddic.com.ng'
       }
     });
     
-    if (credential) {
-      const rawId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-      const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
+    if (assertion) {
+      const result = await api('/webauthn/login/', 'POST', { 
+        credential_id: storedCredentialId 
+      });
       saveTokens(result.tokens);
-      showMsg('login', 'Biometric login successful!', 'success');
+      showMsg('login', 'Fingerprint verified! Welcome!', 'success');
       setTimeout(loadHome, 500);
     }
   } catch (e) {
-    showMsg('login', 'Biometric not recognized. Use password.', 'error');
+    console.error('Biometric login error:', e);
+    showMsg('login', 'Fingerprint not recognized. Use password instead.', 'error');
   }
 }
 
 // ===================== BIOMETRIC SETUP (FORCED) =====================
-async function setupBiometric() {
+async function setupPlatformBiometric() {
+  console.log('🔐 Starting biometric setup...');
+  
   if (!window.PublicKeyCredential) {
-    showMsg('bio', 'Biometric not supported. Please use a device with fingerprint/face ID.', 'error');
-    document.getElementById('bio-skip').style.display = 'block';
-    return;
+    showMsg('bio', '❌ Biometric not supported. Use Chrome/Safari on a device with fingerprint sensor.', 'error');
+    return false;
   }
   
-  setLoading('bio-setup-btn', true);
-  document.getElementById('bio-status').textContent = 'Please scan your fingerprint or face when prompted...';
+  // Check if platform authenticator is available (device fingerprint/face)
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    console.log('Platform authenticator available:', available);
+    if (!available) {
+      showMsg('bio', '❌ No fingerprint/face sensor detected on this device', 'error');
+      return false;
+    }
+  } catch (err) {
+    console.error('Auth check error:', err);
+  }
+  
+  const btn = document.getElementById('bio-setup-btn');
+  const status = document.getElementById('bio-status');
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Setting up...';
+  status.textContent = 'Place your finger on the sensor...';
   
   try {
+    // Generate stable user ID from email
+    const email = localStorage.getItem('quizwin_user_email') || 'user@quizwin.com';
+    const userIdBytes = new TextEncoder().encode(email);
+    const userId = userIdBytes.slice(0, 16);
+    
+    console.log('Creating WebAuthn credential...');
+    console.log('RP ID:', 'voddic.com.ng');
+    console.log('Origin:', window.location.origin);
+    
     const credential = await navigator.credentials.create({
       publicKey: {
-        challenge: new Uint8Array(32),
-        rp: { name: 'QuizWin', id: window.location.hostname },
-        user: { 
-          id: new Uint8Array(16), 
-          name: 'quizwin_user', 
-          displayName: 'QuizWin User' 
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: {
+          name: 'QuizWin',
+          id: 'voddic.com.ng'  // ← SHARED PARENT DOMAIN (works for all subdomains)
         },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-        authenticatorSelection: { 
-          userVerification: 'required', 
-          residentKey: 'required',
-          authenticatorAttachment: 'platform'
+        user: {
+          id: userId,
+          name: email,
+          displayName: email.split('@')[0]
         },
-        timeout: 120000
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },   // ES256
+          { type: 'public-key', alg: -257 }  // RS256
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',  // ONLY device biometric
+          userVerification: 'required',
+          residentKey: 'preferred',
+          requireResidentKey: false
+        },
+        timeout: 60000,
+        attestation: 'none'
       }
     });
     
-    if (credential) {
-      const rawId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-      await api('/webauthn/register/', 'POST', {
-        credential_id: rawId,
-        public_key: 'registered',
-        device_name: 'Primary Device'
-      });
-      
-      localStorage.setItem('quizwin_biometric', 'true');
-      biometricSet = true;
-      
-      document.getElementById('bio-success').style.display = 'block';
-      document.getElementById('bio-status').textContent = '';
-      document.getElementById('bio-skip').style.display = 'none';
-      document.getElementById('bio-setup-btn').textContent = '✅ Biometric Set Up!';
-      document.getElementById('bio-setup-btn').disabled = true;
-      
-      showMsg('bio', 'Biometric security activated! Redirecting...', 'success');
-      setTimeout(loadHome, 1500);
-    }
+    console.log('✅ Credential created:', credential);
+    
+    // Convert to base64url
+    const rawId = bufferToBase64url(credential.rawId);
+    
+    // Register with backend
+    console.log('Sending to backend...');
+    await api('/webauthn/register/', 'POST', {
+      credential_id: rawId,
+      public_key: 'platform_authenticator',
+      device_name: 'Primary Device'
+    });
+    
+    // Store locally
+    localStorage.setItem('quizwin_credential_id', rawId);
+    localStorage.setItem('quizwin_biometric', 'true');
+    biometricSet = true;
+    
+    status.textContent = '';
+    btn.innerHTML = '✅ Fingerprint Set Up!';
+    btn.style.background = 'var(--success)';
+    
+    showMsg('bio', '✅ Fingerprint registered! Redirecting...', 'success');
+    setTimeout(() => loadHome(), 1500);
+    
+    return true;
+    
   } catch (e) {
-    document.getElementById('bio-status').textContent = 'Setup cancelled or failed. You can try again.';
-    showMsg('bio', 'Biometric setup failed. Try again or skip.', 'error');
+    console.error('❌ Biometric setup error:', e);
+    
+    let errorMsg = 'Setup failed: ';
+    if (e.name === 'NotAllowedError') {
+      errorMsg = 'Permission denied. You must allow fingerprint access.';
+    } else if (e.name === 'InvalidStateError') {
+      errorMsg = 'This device already has a fingerprint registered. Try again or clear browser data.';
+    } else if (e.name === 'NotSupportedError') {
+      errorMsg = 'Device does not support fingerprint authentication.';
+    } else if (e.name === 'SecurityError') {
+      errorMsg = 'Security error. Make sure you are on HTTPS.';
+    } else {
+      errorMsg += e.message || e.name;
+    }
+    
+    status.textContent = errorMsg;
+    showMsg('bio', '❌ ' + errorMsg, 'error');
+    
+    btn.disabled = false;
+    btn.innerHTML = '🔐 Try Again - Set Up Fingerprint';
+    return false;
   }
-  setLoading('bio-setup-btn', false);
-}
-
-function skipBiometric() {
-  showMsg('bio', '⚠️ Skipping biometric. Your account is less secure.', 'error');
-  localStorage.setItem('quizwin_biometric', 'false');
-  biometricSet = false;
-  setTimeout(loadHome, 500);
 }
 
 async function handlePasswordReset(e) {
@@ -667,7 +752,6 @@ async function loadHome() {
     avatar.textContent = (user.first_name || 'U')[0].toUpperCase();
     document.getElementById('welcome-msg').textContent = `Welcome, ${user.first_name || 'Player'}!`;
     
-    // Load categories
     const res = await fetch(CATEGORIES_API, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
@@ -704,6 +788,8 @@ function handleLogout() {
   localStorage.removeItem('quizwin_access');
   localStorage.removeItem('quizwin_refresh');
   localStorage.removeItem('quizwin_biometric');
+  localStorage.removeItem('quizwin_credential_id');
+  localStorage.removeItem('quizwin_user_email');
   accessToken = null;
   refreshToken = null;
   biometricSet = false;
@@ -729,15 +815,18 @@ if (stage && cube) {
   stage.addEventListener('pointerup', () => cube.style.animationPlayState = 'running');
 }
 
-// Auto-login: check session and biometric status
+// Auto-login
 if (accessToken) {
   if (biometricSet) {
     loadHome();
   } else {
-    // Token exists but no biometric - force setup
     showView('view-biometric-setup');
   }
 }
+
+console.log('QuizWin loaded ✅');
+console.log('API_BASE:', API_BASE);
+console.log('Platform authenticator support:', !!window.PublicKeyCredential);
 </script>
 </body>
 </html>
