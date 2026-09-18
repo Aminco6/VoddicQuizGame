@@ -375,22 +375,24 @@
     </form>
   </div>
 
-  <!-- BIOMETRIC SETUP (FORCED AFTER SIGNUP) -->
-  <div class="view" id="view-biometric-setup">
+<!-- BIOMETRIC SETUP (FORCED AFTER SIGNUP) -->
+<div class="view" id="view-biometric-setup">
     <div class="top-row"><button class="back-btn hidden">←</button></div>
     <div class="bio-icon-wrap">🔐</div>
     <div class="heading-block" style="margin-top:10px;">
-      <div class="heading">Secure Your Account</div>
-      <div class="subheading">Set up fingerprint or face recognition for fast and secure access to your quizzes and winnings.</div>
+        <div class="heading">Secure Your Quiz Account</div>
+        <div class="subheading">Fingerprint is REQUIRED to start quizzes and submit answers. This prevents cheating.</div>
     </div>
     <div class="form" style="margin-top:30px;">
-      <button class="primary-btn" id="bio-setup-btn" onclick="setupBiometric()">🔐 Set Up Fingerprint / Face ID</button>
-      <p class="bio-status" id="bio-status">Your device will prompt you to scan your fingerprint or face</p>
-      <div class="bio-success" id="bio-success">✅ Biometric setup complete!</div>
-      <div class="message" id="bio-msg"></div>
-      <button class="secondary-btn skip" id="bio-skip" onclick="skipBiometric()" style="margin-top:20px;">Skip for now (not recommended)</button>
+        <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">🔐 Set Up Fingerprint Now</button>
+        <p class="bio-status" id="bio-status">Your fingerprint stays on your device only. Never uploaded.</p>
+        <div class="bio-success" id="bio-success"></div>
+        <div class="message" id="bio-msg"></div>
+        <p style="color:var(--error);text-align:center;font-size:11px;margin-top:16px;">
+            ⚠️ Fingerprint is mandatory. You cannot play quizzes without it.
+        </p>
     </div>
-  </div>
+</div>
 
   <!-- HOME -->
   <div class="view" id="view-home">
@@ -412,8 +414,8 @@
 
 // ===================== CONFIG =====================
 // Replace with your actual trycloudflare URL
-const API_BASE = 'https://apiquiz.voddic.com.ng/api/v1/auth';
-const CATEGORIES_API = 'https://apiquiz.voddic.com.ng/api/v1/categories';
+const API_BASE = 'https://connectapi.voddic.com.ng/api/v1/auth';
+const CATEGORIES_API = 'https://connectapi.voddic.com.ng/api/v1/categories';
 
 
 let accessToken = localStorage.getItem('quizwin_access');
