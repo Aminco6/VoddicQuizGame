@@ -618,48 +618,40 @@ async function handleBiometricLogin() {
 
 // ===================== BIOMETRIC SETUP (FORCED) =====================
 async function setupPlatformBiometric() {
-  console.log('🔐 Starting biometric setup...');
+  console.log('🔐 Starting STRICT platform biometric setup...');
   
   if (!window.PublicKeyCredential) {
-    showMsg('bio', '❌ Biometric not supported. Use Chrome/Safari on a device with fingerprint sensor.', 'error');
+    showMsg('bio', '❌ Biometric not supported on this device', 'error');
     return false;
   }
   
-  // Check if platform authenticator is available (device fingerprint/face)
-  try {
-    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    console.log('Platform authenticator available:', available);
-    if (!available) {
-      showMsg('bio', '❌ No fingerprint/face sensor detected on this device', 'error');
-      return false;
-    }
-  } catch (err) {
-    console.error('Auth check error:', err);
+  // Verify device has a real fingerprint sensor
+  const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  console.log('Device sensor available:', available);
+  if (!available) {
+    showMsg('bio', '❌ No fingerprint/face sensor found on this device', 'error');
+    return false;
   }
   
   const btn = document.getElementById('bio-setup-btn');
   const status = document.getElementById('bio-status');
   
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Setting up...';
-  status.textContent = 'Place your finger on the sensor...';
+  btn.innerHTML = '<span class="spinner"></span> Waiting for fingerprint...';
+  status.textContent = 'Touch the fingerprint sensor on your phone...';
   
   try {
-    // Generate stable user ID from email
     const email = localStorage.getItem('quizwin_user_email') || 'user@quizwin.com';
-    const userIdBytes = new TextEncoder().encode(email);
-    const userId = userIdBytes.slice(0, 16);
-    
-    console.log('Creating WebAuthn credential...');
-    console.log('RP ID:', 'voddic.com.ng');
-    console.log('Origin:', window.location.origin);
+    // Use a stable 16-byte user handle derived from email (deterministic)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
+    const userId = new Uint8Array(hashBuffer).slice(0, 16);
     
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         rp: {
           name: 'QuizWin',
-          id: 'voddic.com.ng'  // ← SHARED PARENT DOMAIN (works for all subdomains)
+          id: 'quiz.voddic.com.ng'  // ← MATCH the frontend domain exactly
         },
         user: {
           id: userId,
@@ -667,13 +659,12 @@ async function setupPlatformBiometric() {
           displayName: email.split('@')[0]
         },
         pubKeyCredParams: [
-          { type: 'public-key', alg: -7 },   // ES256
-          { type: 'public-key', alg: -257 }  // RS256
+          { type: 'public-key', alg: -7 }   // ES256 only
         ],
         authenticatorSelection: {
-          authenticatorAttachment: 'platform',  // ONLY device biometric
-          userVerification: 'required',
-          residentKey: 'preferred',
+          authenticatorAttachment: 'platform',   // FORCE device sensor only
+          userVerification: 'required',          // FORCE biometric (no PIN fallback)
+          residentKey: 'discouraged',            // ← KEY: discourage cloud sync
           requireResidentKey: false
         },
         timeout: 60000,
@@ -683,18 +674,14 @@ async function setupPlatformBiometric() {
     
     console.log('✅ Credential created:', credential);
     
-    // Convert to base64url
     const rawId = bufferToBase64url(credential.rawId);
     
-    // Register with backend
-    console.log('Sending to backend...');
     await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
-      device_name: 'Primary Device'
+      device_name: navigator.userAgent.substring(0, 100)
     });
     
-    // Store locally
     localStorage.setItem('quizwin_credential_id', rawId);
     localStorage.setItem('quizwin_biometric', 'true');
     biometricSet = true;
@@ -702,33 +689,30 @@ async function setupPlatformBiometric() {
     status.textContent = '';
     btn.innerHTML = '✅ Fingerprint Set Up!';
     btn.style.background = 'var(--success)';
-    
-    showMsg('bio', '✅ Fingerprint registered! Redirecting...', 'success');
+    showMsg('bio', '✅ Fingerprint registered!', 'success');
     setTimeout(() => loadHome(), 1500);
     
     return true;
     
   } catch (e) {
-    console.error('❌ Biometric setup error:', e);
+    console.error('❌ Setup error:', e.name, e.message);
     
-    let errorMsg = 'Setup failed: ';
+    let msg = 'Setup failed. ';
     if (e.name === 'NotAllowedError') {
-      errorMsg = 'Permission denied. You must allow fingerprint access.';
+      msg = 'Fingerprint was cancelled or already registered. If you have a saved passkey for voddic.com.ng, delete it in your phone Settings → Passwords, then try again.';
     } else if (e.name === 'InvalidStateError') {
-      errorMsg = 'This device already has a fingerprint registered. Try again or clear browser data.';
+      msg = 'This device already has a fingerprint registered for QuizWin. Delete it from phone Settings → Passwords first.';
     } else if (e.name === 'NotSupportedError') {
-      errorMsg = 'Device does not support fingerprint authentication.';
-    } else if (e.name === 'SecurityError') {
-      errorMsg = 'Security error. Make sure you are on HTTPS.';
+      msg = 'This browser/device does not support fingerprint authentication.';
     } else {
-      errorMsg += e.message || e.name;
+      msg += e.message;
     }
     
-    status.textContent = errorMsg;
-    showMsg('bio', '❌ ' + errorMsg, 'error');
+    status.textContent = msg;
+    showMsg('bio', '❌ ' + msg, 'error');
     
     btn.disabled = false;
-    btn.innerHTML = '🔐 Try Again - Set Up Fingerprint';
+    btn.innerHTML = '🔐 Try Again';
     return false;
   }
 }
