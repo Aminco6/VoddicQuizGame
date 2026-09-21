@@ -980,15 +980,13 @@ async function setupPlatformBiometric() {
   }
 
   setLoading('bio-setup-btn', true, 'Waiting for fingerprint...');
-  document.getElementById('bio-status').textContent = 'Touch the fingerprint sensor...';
+  document.getElementById('bio-status').textContent = 'Touch the fingerprint sensor on your phone...';
 
   try {
     const email = userEmail || 'user@voddic.com';
-    // STABLE user.id from email (16 bytes, deterministic)
     const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
     const userId = new Uint8Array(hashBuf).slice(0, 16);
 
-    // Step 1: Request credentials WITHOUT excludeCredentials so phone allows multiple
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -999,15 +997,18 @@ async function setupPlatformBiometric() {
           { type: 'public-key', alg: -257 }
         ],
         authenticatorSelection: {
-          authenticatorAttachment: 'platform',
-          userVerification: 'required',
-          residentKey: 'preferred',      // ← changed from 'discouraged'
+          authenticatorAttachment: 'platform',    // ✅ device sensor only
+          userVerification: 'required',           // ✅ force biometric
+          residentKey: 'discouraged',             // ✅ NO cloud sync
           requireResidentKey: false
         },
+        excludeCredentials: [],                   // ✅ don't exclude anything
         timeout: 90000,
         attestation: 'none',
         extensions: {
-          credProps: true  // Ask browser to report if credential is discoverable
+          // ✅ Tell browser: we do NOT want synced passkeys
+          'credProps': true,
+          'uvm': true
         }
       }
     });
@@ -1015,12 +1016,13 @@ async function setupPlatformBiometric() {
     const rawId = bufferToBase64url(credential.rawId);
     const clientExtResults = credential.getClientExtensionResults();
     
-    console.log('🔐 New credential created:', rawId.slice(0, 40));
+    console.log('🔐 Credential created');
+    console.log('   rawId:', rawId.slice(0, 40));
     console.log('   credProps:', clientExtResults.credProps);
-    console.log('   isDiscoverable:', clientExtResults.credProps?.rk);
+    console.log('   UVM (how user was verified):', clientExtResults.uvm);
 
-    // Send to backend
-    const response = await api('/webauthn/register/', 'POST', {
+    // Delete any old credentials for this device BEFORE saving the new one
+    await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
       device_name: navigator.userAgent.substring(0, 100),
@@ -1042,19 +1044,18 @@ async function setupPlatformBiometric() {
   } catch (e) {
     console.error('❌ Biometric error:', e);
     let msg = 'Setup failed. ';
-    if (e.name === 'NotAllowedError') {
-      msg = 'Fingerprint cancelled or blocked. If you have a saved passkey for this site in your phone Settings → Passwords, DELETE it and try again.';
-    } else if (e.name === 'InvalidStateError') {
-      msg = 'This device already has a fingerprint for this account. Try logging in instead.';
-    } else if (e.name === 'NotSupportedError') {
-      msg = 'Device does not support fingerprint.';
-    } else msg += (e.message || e.name);
+    if (e.name === 'NotAllowedError') msg = 'Fingerprint cancelled. Try again.';
+    else if (e.name === 'InvalidStateError') msg = 'This device already has a fingerprint. Try login instead.';
+    else if (e.name === 'NotSupportedError') msg = 'Device does not support fingerprint.';
+    else msg += (e.message || e.name);
     showMsg('bio', '❌ ' + msg, 'error');
     setLoading('bio-setup-btn', false);
     document.getElementById('bio-setup-btn').textContent = '👆 Try Again';
     return false;
   }
 }
+
+
 
 
 
