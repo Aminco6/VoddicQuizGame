@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,41 +10,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0B0F1A;
-    --bg-2:#101827;
-    --surface:#161F33;
-    --surface-2:#1D2740;
-    --line:#28324C;
-    --gold:#E8B94C;
-    --gold-dim:#B4862F;
-    --gold-light:#FFD166;
-    --silver:#C7CCD9;
-    --bronze:#C97B4A;
-    --teal:#3FC7B0;
-    --text:#EDEFF4;
-    --text-dim:#8B93A7;
-    --purple:#6b3fd6;
-    --purple-light:#9b6bf0;
-    --error:#E15554;
-    --success:#3FC7B0;
+    --bg:#0B0F1A; --bg-2:#101827; --surface:#161F33; --surface-2:#1D2740; --line:#28324C;
+    --gold:#E8B94C; --gold-dim:#B4862F; --gold-light:#FFD166;
+    --silver:#C7CCD9; --bronze:#C97B4A; --teal:#3FC7B0;
+    --text:#EDEFF4; --text-dim:#8B93A7;
+    --purple:#6b3fd6; --purple-light:#9b6bf0;
+    --error:#E15554; --success:#3FC7B0;
   }
   :root:not([data-theme="light"]){ color-scheme: dark; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; padding:0; height:100%; }
   body{
     background:radial-gradient(1100px 640px at 50% -10%, #182238 0%, var(--bg) 55%);
-    background-color:var(--bg);
-    color:var(--text);
+    background-color:var(--bg); color:var(--text);
     font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    min-height:100%;
-    overflow-x:hidden;
+    min-height:100%; overflow-x:hidden;
   }
 
   /* ===== Desktop block ===== */
   .desktop-block{ display:none; position:fixed; inset:0; z-index:9999;
     background:radial-gradient(1100px 640px at 50% -10%, #182238 0%, var(--bg) 55%);
-    flex-direction:column; align-items:center; justify-content:center;
-    padding:40px; text-align:center; }
+    flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center; }
   .desktop-block .icon{ font-size:80px; margin-bottom:24px; }
   .desktop-block h1{ color:var(--gold); font-size:28px; margin-bottom:16px; font-weight:800; }
   .desktop-block p{ color:var(--text-dim); font-size:15px; line-height:1.6; max-width:400px; }
@@ -55,31 +40,21 @@
   }
 
   #root{ display:block; }
-
-  /* ===== View router ===== */
   .view{ display:none; }
   .view.active{ display:block; animation:fadeIn 0.25s ease; }
   @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
 
-  /* ===================================================== */
-  /* ============ AUTH VIEWS (boxed, purple theme) ======== */
-  /* ===================================================== */
+  /* ===== Auth shell (purple boxed theme) ===== */
   .auth-shell{
-    position:relative;
-    max-width:420px;
-    margin:0 auto;
-    min-height:100vh;
-    min-height:100dvh;
+    position:relative; max-width:420px; margin:0 auto;
+    min-height:100vh; min-height:100dvh;
     background:
       radial-gradient(circle at 50% 0%, rgba(155,107,240,0.28) 0%, rgba(107,63,214,0.1) 32%, transparent 60%),
       radial-gradient(circle at 10% 90%, rgba(107,63,214,0.22) 0%, transparent 45%),
       linear-gradient(180deg, #0c0a1f 0%, #1a1440 55%, #0c0a1f 100%);
-    overflow:hidden;
-    isolation:isolate;
-    padding:0 26px;
-    padding-bottom:env(safe-area-inset-bottom, 16px);
-    display:flex;
-    flex-direction:column;
+    overflow:hidden; isolation:isolate;
+    padding:0 26px; padding-bottom:env(safe-area-inset-bottom, 16px);
+    display:flex; flex-direction:column;
   }
   .auth-shell::before{
     content:""; position:absolute; border-radius:50%;
@@ -92,30 +67,19 @@
     width:130px; height:130px; bottom:8%; right:-6%; pointer-events:none;
   }
 
-  .top-row{
-    display:flex; align-items:center; justify-content:space-between;
-    padding-top:22px; min-height:44px;
-    position:relative; z-index:5;
-  }
-  .back-btn{
-    width:36px; height:36px; border-radius:12px;
-    background:rgba(255,255,255,0.06); border:none;
-    color:#f5f3ff; font-size:16px;
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .top-right-btn{
-    background:none; border:none; color:#9b6bf0;
-    font-size:13px; font-weight:700; cursor:pointer; padding:6px;
-  }
+  .top-row{ display:flex; align-items:center; justify-content:space-between;
+    padding-top:22px; min-height:44px; position:relative; z-index:5; }
+  .back-btn{ width:36px; height:36px; border-radius:12px;
+    background:rgba(255,255,255,0.06); border:none; color:#f5f3ff; font-size:16px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .top-right-btn{ background:none; border:none; color:#9b6bf0;
+    font-size:13px; font-weight:700; cursor:pointer; padding:6px; }
 
   .brand-row{ display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px; position:relative; z-index:5; }
-  .brand-cube{
-    width:34px; height:34px; border-radius:9px;
+  .brand-cube{ width:34px; height:34px; border-radius:9px;
     background:linear-gradient(145deg, #9b6bf0, #6b3fd6 60%, #351f78);
-    border:2.5px solid var(--gold);
-    display:flex; align-items:center; justify-content:center;
-    font-weight:900; color:var(--gold); font-size:16px;
-  }
+    border:2.5px solid var(--gold); display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:var(--gold); font-size:16px; }
   .brand-name{ font-size:19px; font-weight:800; color:#f5f3ff; }
   .brand-name .win{ color:var(--gold-light); }
 
@@ -123,17 +87,13 @@
   .heading{ color:#f5f3ff; font-size:23px; font-weight:800; letter-spacing:-0.3px; }
   .subheading{ color:#a79fd1; font-size:13px; margin-top:8px; line-height:1.5; padding:0 6px; }
 
-  /* ===== Landing ===== */
-  .stage{
-    position:relative; width:100%; flex:1 1 auto; min-height:220px;
+  /* Landing cube */
+  .stage{ position:relative; width:100%; flex:1 1 auto; min-height:220px;
     display:flex; align-items:center; justify-content:center;
-    perspective:900px; margin-top:8%;
-  }
-  .glow{
-    position:absolute; width:260px; height:260px; border-radius:50%;
+    perspective:900px; margin-top:8%; }
+  .glow{ position:absolute; width:260px; height:260px; border-radius:50%;
     background:radial-gradient(circle, rgba(180,120,255,0.55) 0%, rgba(155,107,240,0.25) 35%, transparent 70%);
-    filter:blur(6px); animation:pulse 3s ease-in-out infinite; z-index:0;
-  }
+    filter:blur(6px); animation:pulse 3s ease-in-out infinite; z-index:0; }
   @keyframes pulse{ 0%,100%{ transform:scale(1); opacity:0.8; } 50%{ transform:scale(1.12); opacity:1; } }
   .platform{ position:absolute; bottom:14%; width:230px; height:70px; z-index:1; }
   .platform .ring{ position:absolute; left:50%; border-radius:50%; transform:translateX(-50%); }
@@ -159,18 +119,15 @@
   .tagline{ color:#cdc4f0; font-size:14px; letter-spacing:0.3px; margin-top:6px; text-align:center; opacity:0.9; }
   .actions{ width:100%; max-width:340px; padding:24px 20px 32px; display:flex; flex-direction:column; align-items:center; gap:14px; z-index:4; margin:0 auto; }
 
-  /* ===== Forms ===== */
+  /* Forms */
   .form{ margin-top:26px; display:flex; flex-direction:column; gap:14px; padding-bottom:26px; position:relative; z-index:5; }
   .field{ position:relative; }
   .field label{ display:block; color:#c9bff2; font-size:12px; font-weight:600; margin-bottom:6px; }
   .field-input-wrap{ position:relative; display:flex; align-items:center; }
   .field-icon{ position:absolute; left:14px; font-size:15px; opacity:0.55; pointer-events:none; }
-  .field input{
-    width:100%; padding:13px 14px 13px 40px; border-radius:14px;
-    background:#1a1638; border:1.5px solid #2c265a;
-    color:#f5f3ff; font-size:14px; outline:none;
-    transition:border-color 0.2s ease, box-shadow 0.2s ease; font-family:inherit;
-  }
+  .field input{ width:100%; padding:13px 14px 13px 40px; border-radius:14px;
+    background:#1a1638; border:1.5px solid #2c265a; color:#f5f3ff; font-size:14px; outline:none;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease; font-family:inherit; }
   .field input::placeholder{ color:#6d63a0; }
   .field input:focus{ border-color:#9b6bf0; box-shadow:0 0 0 3px rgba(155,107,240,0.18); }
   .toggle-eye{ position:absolute; right:12px; background:none; border:none; font-size:15px; color:#a79fd1; cursor:pointer; padding:6px; }
@@ -185,51 +142,42 @@
   .terms-row span{ color:#a79fd1; font-size:11.5px; line-height:1.5; }
   .terms-row a{ color:#9b6bf0; font-weight:600; text-decoration:none; }
 
-  .primary-btn, .cta{
-    width:100%; padding:16px 0; border:none; border-radius:32px;
-    font-size:17px; font-weight:700; letter-spacing:0.3px;
-    color:#3a1e00; cursor:pointer;
+  .primary-btn, .cta{ width:100%; padding:16px 0; border:none; border-radius:32px;
+    font-size:17px; font-weight:700; letter-spacing:0.3px; color:#3a1e00; cursor:pointer;
     background:linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 55%, var(--gold-dim) 100%);
     box-shadow:0 6px 0 #b56a00,0 10px 22px rgba(255,176,32,0.4),inset 0 1px 0 rgba(255,255,255,0.6);
-    transition:transform 0.15s ease, box-shadow 0.15s ease; font-family:inherit;
-  }
+    transition:transform 0.15s ease, box-shadow 0.15s ease; font-family:inherit; }
   .primary-btn:active, .cta:active{ transform:translateY(4px); box-shadow:0 2px 0 #b56a00,0 4px 12px rgba(255,176,32,0.35),inset 0 1px 0 rgba(255,255,255,0.6); }
   .primary-btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .primary-btn.success{ background:linear-gradient(180deg,#5eeaa0 0%, var(--success) 55%, #1fb85e 100%); box-shadow:0 6px 0 #17934a,0 10px 22px rgba(46,213,115,0.4); }
 
-  .secondary-btn{
-    width:100%; padding:14px 0; border-radius:28px;
+  .secondary-btn{ width:100%; padding:14px 0; border-radius:28px;
     border:2px solid #9b6bf0; background:rgba(107,63,214,0.15);
     color:#f5f3ff; font-size:14px; font-weight:700;
-    cursor:pointer; margin-top:6px; font-family:inherit;
-  }
+    cursor:pointer; margin-top:6px; font-family:inherit; }
   .secondary-btn:active{ background:rgba(107,63,214,0.3); }
+  .secondary-btn.danger{ border-color:var(--error); background:rgba(225,85,84,0.1); color:#ff8f8e; }
 
   .login-link{ background:none; border:none; color:#c9bff2; font-size:14px; cursor:pointer; opacity:0.85; }
 
   .divider{ display:flex; align-items:center; gap:10px; margin:18px 0 4px; color:#a79fd1; font-size:11.5px; font-weight:600; }
   .divider::before,.divider::after{ content:""; flex:1; height:1px; background:rgba(255,255,255,0.1); }
 
-  .google-btn{
-    width:100%; padding:12.5px 0; border-radius:28px;
-    border:1.5px solid #2c265a; background:#ffffff;
-    color:#2b2b2b; font-size:14px; font-weight:700;
+  .google-btn{ width:100%; padding:12.5px 0; border-radius:28px;
+    border:1.5px solid #2c265a; background:#ffffff; color:#2b2b2b; font-size:14px; font-weight:700;
     display:flex; align-items:center; justify-content:center; gap:10px;
-    cursor:pointer; font-family:inherit;
-  }
+    cursor:pointer; font-family:inherit; }
   .google-btn:active{ transform:scale(0.98); background:#f3f3f3; }
   .google-btn svg{ width:19px; height:19px; }
 
   .switch-line{ text-align:center; color:#a79fd1; font-size:13px; margin-top:16px; padding-bottom:20px; }
   .switch-line button{ background:none; border:none; color:var(--gold-light); font-weight:700; font-size:13px; cursor:pointer; padding:6px; }
 
-  .reset-icon-wrap{
-    width:84px; height:84px; border-radius:50%; margin:8px auto 0;
+  .reset-icon-wrap{ width:84px; height:84px; border-radius:50%; margin:8px auto 0;
     background:radial-gradient(circle at 35% 30%, rgba(155,107,240,0.4), rgba(107,63,214,0.08) 70%);
-    display:flex; align-items:center; justify-content:center; font-size:36px;
-  }
+    display:flex; align-items:center; justify-content:center; font-size:36px; }
 
-  /* ===== PIN ===== */
+  /* PIN */
   .pin-display{ display:flex; gap:12px; justify-content:center; margin:28px 0 24px; }
   .pin-dot{ width:16px; height:16px; border-radius:50%;
     background:#1a1638; border:2px solid #2c265a; transition:all 0.2s ease; }
@@ -237,25 +185,21 @@
   .pin-keypad{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
     max-width:320px; margin:0 auto; padding-bottom:20px; position:relative; z-index:5; }
   .pin-key{ padding:18px 0; border-radius:16px;
-    background:#1a1638; border:1.5px solid #2c265a;
-    color:#f5f3ff; font-size:22px; font-weight:700;
+    background:#1a1638; border:1.5px solid #2c265a; color:#f5f3ff; font-size:22px; font-weight:700;
     cursor:pointer; text-align:center; user-select:none;
     transition:transform 0.1s ease, background 0.1s ease; font-family:inherit; }
   .pin-key:active{ transform:scale(0.94); background:rgba(155,107,240,0.2); border-color:#9b6bf0; }
   .pin-key.empty{ background:none; border:none; cursor:default; pointer-events:none; }
 
-  /* ===== Biometric ===== */
-  .bio-icon-wrap{
-    width:100px; height:100px; border-radius:50%; margin:20px auto 0;
+  /* Biometric */
+  .bio-icon-wrap{ width:100px; height:100px; border-radius:50%; margin:20px auto 0;
     background:radial-gradient(circle at 35% 30%, rgba(63,199,176,0.35), rgba(63,199,176,0.05) 70%);
     display:flex; align-items:center; justify-content:center; font-size:48px;
-    border:2px solid rgba(63,199,176,0.35);
-    animation: pulse2 2s ease-in-out infinite;
-  }
+    border:2px solid rgba(63,199,176,0.35); animation: pulse2 2s ease-in-out infinite; }
   @keyframes pulse2{ 0%,100%{ box-shadow: 0 0 20px rgba(63,199,176,0.3); } 50%{ box-shadow: 0 0 60px rgba(63,199,176,0.55); } }
   .bio-status{ text-align:center; color:#a79fd1; font-size:12px; margin-top:10px; line-height:1.5; }
 
-  /* ===== Messages ===== */
+  /* Messages */
   .message{ display:none; align-items:center; gap:8px;
     font-size:12.5px; font-weight:600; padding:11px 14px;
     border-radius:14px; margin-top:12px; line-height:1.5; }
@@ -269,82 +213,50 @@
     border-radius:50%; animation:spin2 0.6s linear infinite; }
   @keyframes spin2{ to{ transform:rotate(360deg); } }
 
-  /* ===================================================== */
-  /* ============ LOBBY (Voddic Arena home) =============== */
-  /* ===================================================== */
-  #lobbyShell{
-    max-width:640px; margin:0 auto; padding:14px 18px 40px;
+  /* ===== Lobby ===== */
+  #lobbyShell{ max-width:640px; margin:0 auto; padding:14px 18px 40px;
     padding-top:calc(14px + env(safe-area-inset-top, 0px));
-    padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px));
-  }
+    padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px)); }
 
-  #topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:6px 2px;
-  }
+  #topbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 2px; }
   .brand{ font-size:12.5px; letter-spacing:0.02em; color:var(--text-dim); }
   .brand b{ color:var(--gold); font-weight:700; }
-  #walletChip{
-    display:flex; align-items:center; gap:9px;
+  #walletChip{ display:flex; align-items:center; gap:9px;
     background:var(--surface); border:1px solid var(--line);
-    border-radius:999px; padding:5px 7px 5px 13px;
-  }
+    border-radius:999px; padding:5px 7px 5px 13px; }
   #walletChip .bal{ font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
   #walletChip .lbl{ font-size:10px; color:var(--text-dim); display:block; margin-top:-2px; }
-  #walletChip .plus{
-    border-radius:999px; background:var(--gold); color:#1A1305;
+  #walletChip .plus{ border-radius:999px; background:var(--gold); color:#1A1305;
     width:24px; height:24px; font-size:15px; font-weight:800;
     display:flex; align-items:center; justify-content:center; line-height:1;
-    cursor:pointer; border:none;
-  }
+    cursor:pointer; border:none; }
 
-  #hero{
-    position:relative; padding:18px 0 4px;
-    display:flex; flex-direction:column; align-items:center;
-    text-align:center;
-  }
-  #globeStage{
-    position:relative;
-    width:min(78vw, 300px);
-    height:min(78vw, 300px);
-    margin:6px auto 4px;
-    cursor:pointer;
-  }
-  #globeGlow{
-    position:absolute; inset:-18%;
+  #hero{ position:relative; padding:18px 0 4px;
+    display:flex; flex-direction:column; align-items:center; text-align:center; }
+  #globeStage{ position:relative; width:min(78vw, 300px); height:min(78vw, 300px);
+    margin:6px auto 4px; cursor:pointer; }
+  #globeGlow{ position:absolute; inset:-18%;
     background:radial-gradient(circle at 42% 38%, rgba(232,185,76,0.28), rgba(63,199,176,0.10) 45%, transparent 72%);
-    filter:blur(2px); pointer-events:none;
-  }
+    filter:blur(2px); pointer-events:none; }
   #globeCanvas{ position:relative; width:100%; height:100%; display:block; }
   #globeStage:active #globeCanvas{ transform:scale(0.98); }
 
-  .orbitChip{
-    position:absolute;
-    background:var(--surface); border:1px solid var(--line);
-    border-radius:10px; padding:6px 10px;
-    font-size:11px; color:var(--text-dim);
-    white-space:nowrap; pointer-events:none;
-  }
+  .orbitChip{ position:absolute; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:6px 10px; font-size:11px; color:var(--text-dim);
+    white-space:nowrap; pointer-events:none; }
   .orbitChip b{ display:block; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; font-weight:700; }
   #chipStarted{ top:2%; left:-8%; }
   #chipJoined{ top:38%; right:-14%; }
   #chipRequired{ bottom:0%; left:-10%; }
 
-  .sessionTag{
-    font-family:'Space Grotesk', ui-sans-serif, sans-serif;
-    font-size:12.5px; font-weight:600; color:var(--teal);
-    letter-spacing:0.01em; margin-bottom:2px;
-  }
-  #hero h1{
-    font-family:'Space Grotesk', ui-sans-serif, sans-serif;
-    font-size:26px; font-weight:700; margin:2px 0 6px; letter-spacing:-0.01em;
-  }
-  #hero .desc{
-    font-size:13.5px; color:var(--text-dim); line-height:1.55; max-width:38ch; margin:0 auto;
-  }
+  .sessionTag{ font-family:'Space Grotesk', ui-sans-serif, sans-serif;
+    font-size:12.5px; font-weight:600; color:var(--teal); margin-bottom:2px; }
+  #hero h1{ font-family:'Space Grotesk', ui-sans-serif, sans-serif;
+    font-size:26px; font-weight:700; margin:2px 0 6px; letter-spacing:-0.01em; }
+  #hero .desc{ font-size:13.5px; color:var(--text-dim); line-height:1.55; max-width:38ch; margin:0 auto; }
 
   .sectionHead{ display:flex; align-items:baseline; justify-content:space-between; margin:28px 0 12px; }
-  .sectionHead h2{ font-size:14.5px; margin:0; letter-spacing:-0.005em; font-weight:650; color:var(--text); }
+  .sectionHead h2{ font-size:14.5px; margin:0; font-weight:650; color:var(--text); }
   .sectionHead .note{ font-size:11.5px; color:var(--text-dim); }
 
   #prizeLadder{ display:flex; align-items:flex-end; gap:10px; }
@@ -378,33 +290,25 @@
     border-radius:10px; padding:11px 22px; font-size:13px; font-weight:600;
     cursor:pointer; font-family:inherit; }
 
-  #joinBar{
-    position:fixed; left:0; right:0; bottom:0;
+  #joinBar{ position:fixed; left:0; right:0; bottom:0;
     padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-    background:linear-gradient(180deg, rgba(11,15,26,0) 0%, var(--bg) 28%);
-    z-index:50;
-  }
-  #joinBar .inner{
-    max-width:608px; margin:0 auto;
+    background:linear-gradient(180deg, rgba(11,15,26,0) 0%, var(--bg) 28%); z-index:50; }
+  #joinBar .inner{ max-width:608px; margin:0 auto;
     display:flex; align-items:center; gap:12px;
     background:var(--surface); border:1px solid var(--line);
-    border-radius:14px; padding:10px 10px 10px 16px;
-  }
+    border-radius:14px; padding:10px 10px 10px 16px; }
   #joinBar .fee{ flex:1; }
   #joinBar .fee .lbl{ font-size:11px; color:var(--text-dim); }
   #joinBar .fee .amt{ font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--text); }
-  #joinBtn{
-    appearance:none; border:none; border-radius:10px;
+  #joinBtn{ appearance:none; border:none; border-radius:10px;
     background:var(--gold); color:#1A1305; font-weight:700; font-size:14.5px;
-    padding:13px 22px; cursor:pointer; font-family:inherit;
-  }
+    padding:13px 22px; cursor:pointer; font-family:inherit; }
   #joinBtn:active{ transform:scale(0.97); }
   #joinBar.hidden{ display:none; }
 </style>
 </head>
 <body>
 
-<!-- DESKTOP BLOCK -->
 <div class="desktop-block">
   <div class="icon">📱</div>
   <h1>Mobile Only</h1>
@@ -413,7 +317,7 @@
 
 <div id="root">
 
-<!-- ============ LANDING ============ -->
+<!-- LANDING -->
 <div class="view active" id="view-landing">
   <div class="auth-shell">
     <div class="stage">
@@ -434,7 +338,7 @@
   </div>
 </div>
 
-<!-- ============ SIGNUP ============ -->
+<!-- SIGNUP -->
 <div class="view" id="view-signup">
   <div class="auth-shell">
     <div class="top-row">
@@ -476,7 +380,7 @@
   </div>
 </div>
 
-<!-- ============ LOGIN ============ -->
+<!-- LOGIN -->
 <div class="view" id="view-login">
   <div class="auth-shell">
     <div class="top-row">
@@ -518,7 +422,7 @@
   </div>
 </div>
 
-<!-- ============ RESET ============ -->
+<!-- RESET -->
 <div class="view" id="view-reset">
   <div class="auth-shell">
     <div class="top-row"><button class="back-btn" onclick="showView('view-login')">←</button></div>
@@ -540,7 +444,7 @@
   </div>
 </div>
 
-<!-- ============ PIN ============ -->
+<!-- PIN -->
 <div class="view" id="view-pin">
   <div class="auth-shell">
     <div class="top-row"><button class="back-btn" onclick="pinCancel()">←</button></div>
@@ -570,14 +474,14 @@
   </div>
 </div>
 
-<!-- ============ BIOMETRIC ============ -->
+<!-- BIOMETRIC -->
 <div class="view" id="view-biometric">
   <div class="auth-shell">
     <div class="top-row"><button class="back-btn" onclick="handleLogout()">←</button></div>
     <div class="bio-icon-wrap">👆</div>
     <div class="heading-block" style="margin-top:10px;">
       <div class="heading">Set Up Fingerprint</div>
-      <div class="subheading">Fingerprint is required to start games and submit answers. This prevents cheating.</div>
+      <div class="subheading">Fingerprint is required to start games and submit answers.</div>
     </div>
     <div class="form" style="margin-top:30px;">
       <button class="primary-btn" id="bio-setup-btn" onclick="setupPlatformBiometric()">👆 Register Fingerprint</button>
@@ -591,10 +495,9 @@
   </div>
 </div>
 
-<!-- ============ LOBBY (Voddic Arena home) ============ -->
+<!-- LOBBY -->
 <div class="view" id="view-home">
   <div id="lobbyShell">
-
     <div id="topbar">
       <div class="brand"><b>VODDIC</b> ARENA</div>
       <div id="walletChip">
@@ -621,21 +524,9 @@
 
     <div class="sectionHead"><h2>Prize split</h2><span class="note">Pool: ₦150,000</span></div>
     <div id="prizeLadder">
-      <div class="prizeWrap">
-        <div class="place">2nd</div>
-        <div class="amt">₦40,000</div>
-        <div class="bar p2"></div>
-      </div>
-      <div class="prizeWrap first">
-        <div class="place">1st</div>
-        <div class="amt">₦90,000</div>
-        <div class="bar p1"></div>
-      </div>
-      <div class="prizeWrap">
-        <div class="place">3rd</div>
-        <div class="amt">₦20,000</div>
-        <div class="bar p3"></div>
-      </div>
+      <div class="prizeWrap"><div class="place">2nd</div><div class="amt">₦40,000</div><div class="bar p2"></div></div>
+      <div class="prizeWrap first"><div class="place">1st</div><div class="amt">₦90,000</div><div class="bar p1"></div></div>
+      <div class="prizeWrap"><div class="place">3rd</div><div class="amt">₦20,000</div><div class="bar p3"></div></div>
     </div>
 
     <div class="sectionHead"><h2>Session details</h2></div>
@@ -647,8 +538,6 @@
       <div class="dRow"><span class="k">Players required</span><span class="v">24</span></div>
       <div class="dRow"><span class="k">Players joined</span><span class="v teal">17</span></div>
       <div class="dRow"><span class="k">Seats remaining</span><span class="v gold">7</span></div>
-      <div class="dRow"><span class="k">Joined, already played</span><span class="v">11</span></div>
-      <div class="dRow"><span class="k">Joined, yet to play</span><span class="v">6</span></div>
     </div>
 
     <div id="fillMeter">
@@ -656,14 +545,11 @@
       <div class="track"><div class="fill" style="width:70.8%;"></div></div>
     </div>
 
-    <p class="footnote">
-      Tap the globe or Join to enter Session #014. Your ₦500 entry is held from your wallet on join and released back if the room doesn't fill before lock.
-    </p>
+    <p class="footnote">Tap the globe or Join to enter Session #014. Your ₦500 entry is held from your wallet on join.</p>
 
     <div class="logout-row">
       <button class="logout-btn" onclick="handleLogout()">Log out</button>
     </div>
-
   </div>
 
   <div id="joinBar">
@@ -685,6 +571,7 @@
 const API_BASE = 'https://connectapi.voddic.com.ng/api/v1/auth';
 const GAME_URL = 'https://claude.ai/artifact/9BU4zyM7fxZNWzZvrtZTZi';
 const RP_ID = 'quiz.voddic.com.ng';
+const RP_NAME = 'Voddic Arena';
 
 let accessToken = localStorage.getItem('arena_access');
 let refreshToken = localStorage.getItem('arena_refresh');
@@ -699,34 +586,6 @@ let pinMode = 'setup';
 let pinStage = 'first';
 let firstPin = '';
 
-// ==================== CREDENTIAL ID STORAGE (belt & braces) ====================
-function saveCredentialId(id) {
-  try { localStorage.setItem('arena_credential_id', id); } catch (e) {}
-  try { sessionStorage.setItem('arena_credential_id', id); } catch (e) {}
-  try {
-    document.cookie = `arena_cid=${encodeURIComponent(id)}; max-age=31536000; path=/; secure; samesite=lax`;
-  } catch (e) {}
-}
-
-function getCredentialId() {
-  let id = null;
-  try { id = localStorage.getItem('arena_credential_id'); } catch (e) {}
-  if (id) return id;
-  try { id = sessionStorage.getItem('arena_credential_id'); } catch (e) {}
-  if (id) return id;
-  try {
-    const m = document.cookie.match(/arena_cid=([^;]+)/);
-    if (m) return decodeURIComponent(m[1]);
-  } catch (e) {}
-  return null;
-}
-
-function clearCredentialId() {
-  try { localStorage.removeItem('arena_credential_id'); } catch (e) {}
-  try { sessionStorage.removeItem('arena_credential_id'); } catch (e) {}
-  try { document.cookie = 'arena_cid=; max-age=0; path=/'; } catch (e) {}
-}
-
 // ==================== VIEW ROUTER ====================
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -736,7 +595,7 @@ function showView(id) {
   if (jb) jb.classList.toggle('hidden', id !== 'view-home');
   window.scrollTo(0, 0);
   if (id === 'view-home') {
-    setTimeout(() => { try { initGlobe(); } catch(e) { console.warn('Globe:', e); } }, 60);
+    setTimeout(() => { try { initGlobe(); } catch(e) { console.warn('Globe init:', e); } }, 60);
   }
 }
 
@@ -825,13 +684,11 @@ function saveTokens(data) {
 function saveSetupState(data) {
   hasPin = !!data.has_pin;
   hasBiometric = !!data.has_biometric;
-  try {
-    localStorage.setItem('arena_has_pin', hasPin);
-    localStorage.setItem('arena_has_bio', hasBiometric);
-  } catch (e) {}
+  localStorage.setItem('arena_has_pin', hasPin);
+  localStorage.setItem('arena_has_bio', hasBiometric);
 }
 
-// ==================== BASE64URL ====================
+// base64url helpers
 function bufferToBase64url(buffer) {
   const bytes = new Uint8Array(buffer);
   let s = '';
@@ -877,7 +734,7 @@ async function handleSignup(e) {
   setLoading('signup-btn', false);
 }
 
-// ==================== LOGIN (PASSWORD) ====================
+// ==================== LOGIN ====================
 async function handleLogin(e) {
   e.preventDefault();
   setLoading('login-btn', true, 'Logging in...');
@@ -998,14 +855,23 @@ async function submitPin() {
 
 // ==================== BIOMETRIC REGISTRATION ====================
 async function setupPlatformBiometric() {
+  console.log('👆 Starting fingerprint registration...');
+
   if (!window.PublicKeyCredential) {
     showMsg('bio', '❌ Biometric not supported on this device', 'error');
     return false;
   }
+
   let available = false;
-  try { available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch {}
+  try {
+    available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch (e) {
+    console.warn('Platform check failed:', e);
+  }
+
+  console.log('Platform authenticator available:', available);
   if (!available) {
-    showMsg('bio', '❌ No fingerprint sensor found on this device', 'error');
+    showMsg('bio', '❌ No fingerprint sensor found on this device. Enroll your fingerprint in phone Settings first.', 'error');
     return false;
   }
 
@@ -1017,11 +883,21 @@ async function setupPlatformBiometric() {
     const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
     const userId = new Uint8Array(hashBuf).slice(0, 16);
 
+    // Delete any existing credential for this email in localStorage first
+    localStorage.removeItem('arena_credential_id');
+
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'Voddic Arena', id: RP_ID },
-        user: { id: userId, name: email, displayName: userName || email.split('@')[0] },
+        rp: {
+          name: RP_NAME,
+          id: RP_ID
+        },
+        user: {
+          id: userId,
+          name: email,
+          displayName: userName || email.split('@')[0]
+        },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
           { type: 'public-key', alg: -257 }
@@ -1035,26 +911,33 @@ async function setupPlatformBiometric() {
         excludeCredentials: [],
         timeout: 90000,
         attestation: 'none',
-        extensions: { credProps: true, uvm: true }
+        extensions: {
+          credProps: true,
+          uvm: true
+        }
       }
     });
 
     const rawId = bufferToBase64url(credential.rawId);
-    const ext = credential.getClientExtensionResults();
-    const isDiscoverable = ext.credProps ? ext.credProps.rk : false;
-    
-    console.log('🔐 Credential created:', rawId.slice(0, 40), 'discoverable:', isDiscoverable);
+    const extResults = credential.getClientExtensionResults();
+
+    console.log('✅ Credential created');
+    console.log('   rawId:', rawId.slice(0, 50));
+    console.log('   credProps:', extResults.credProps);
+    console.log('   uvm:', extResults.uvm);
 
     // Save to backend
-    await api('/webauthn/register/', 'POST', {
+    const response = await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
       device_name: navigator.userAgent.substring(0, 100),
-      is_discoverable: isDiscoverable
+      is_discoverable: extResults.credProps?.rk || false
     });
 
-    // ✅ Save credential ID to localStorage + sessionStorage + cookie
-    saveCredentialId(rawId);
+    console.log('✅ Saved to backend:', response);
+
+    // Save to localStorage for later fingerprint LOGIN
+    localStorage.setItem('arena_credential_id', rawId);
     hasBiometric = true;
     localStorage.setItem('arena_has_bio', 'true');
 
@@ -1063,16 +946,27 @@ async function setupPlatformBiometric() {
     btn.classList.add('success');
     btn.disabled = true;
     document.getElementById('bio-status').textContent = '';
-    showMsg('bio', '✅ Fingerprint registered!', 'success');
-    setTimeout(() => loadHome(), 1200);
+    showMsg('bio', '✅ Fingerprint registered! Redirecting...', 'success');
+    setTimeout(() => loadHome(), 1400);
     return true;
+
   } catch (e) {
-    console.error('❌ Biometric error:', e);
+    console.error('❌ Biometric error:', e.name, e.message);
     let msg = 'Setup failed. ';
-    if (e.name === 'NotAllowedError') msg = 'Fingerprint cancelled. Try again.';
-    else if (e.name === 'InvalidStateError') msg = 'This device already has a fingerprint. Try login instead.';
-    else if (e.name === 'NotSupportedError') msg = 'Device does not support fingerprint.';
-    else msg += (e.message || e.name);
+    if (e.name === 'NotAllowedError') {
+      msg = 'Fingerprint cancelled or a saved passkey exists for this site. Delete it from phone Settings → Passwords, then try again.';
+    } else if (e.name === 'InvalidStateError') {
+      msg = 'This device already has a fingerprint for this account. Try logging in instead.';
+    } else if (e.name === 'NotSupportedError') {
+      msg = 'Device does not support fingerprint authentication.';
+    } else if (e.name === 'AbortError') {
+      msg = 'Setup was cancelled.';
+    } else if (e.name === 'SecurityError') {
+      msg = 'Security error. Make sure you are on HTTPS.';
+    } else {
+      msg += (e.message || e.name);
+    }
+    document.getElementById('bio-status').textContent = msg;
     showMsg('bio', '❌ ' + msg, 'error');
     setLoading('bio-setup-btn', false);
     document.getElementById('bio-setup-btn').textContent = '👆 Try Again';
@@ -1083,84 +977,67 @@ async function setupPlatformBiometric() {
 // ==================== BIOMETRIC LOGIN ====================
 async function handleBiometricLogin() {
   if (!window.PublicKeyCredential) {
-    showMsg('login', 'Biometric not supported', 'error');
+    showMsg('login', 'Biometric not supported on this device', 'error');
     return;
   }
 
-  const storedCredId = getCredentialId();
-  console.log('🔑 Stored credential ID:', storedCredId ? storedCredId.slice(0, 40) + '...' : 'NONE');
-
-  // ---- ATTEMPT 1: With stored credential ID (works for non-discoverable) ----
-  if (storedCredId) {
-    try {
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          allowCredentials: [{
-            id: base64urlToBuffer(storedCredId),
-            type: 'public-key',
-            transports: ['internal', 'hybrid']
-          }],
-          userVerification: 'required',
-          timeout: 60000,
-          rpId: RP_ID
-        }
-      });
-
-      if (assertion) {
-        const rawId = bufferToBase64url(assertion.rawId);
-        console.log('✅ Assertion (with ID):', rawId.slice(0, 40));
-        
-        const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
-        saveTokens(result.tokens);
-        saveSetupState(result);
-        saveCredentialId(rawId);  // keep in sync
-        showMsg('login', '✅ Fingerprint verified!', 'success');
-        setTimeout(() => routeToNextStep(result), 500);
-        return;
-      }
-    } catch (e) {
-      console.warn('⚠️ Attempt 1 (with ID) failed:', e.name, e.message);
-      // If user cancelled, don't try attempt 2
-      if (e.name === 'NotAllowedError' && e.message && e.message.toLowerCase().includes('cancel')) {
-        showMsg('login', 'Fingerprint cancelled. Try again or use password.', 'error');
-        return;
-      }
-      // Otherwise fall through to attempt 2
-    }
+  // Get the credential ID from localStorage
+  const credId = localStorage.getItem('arena_credential_id');
+  if (!credId) {
+    showMsg('login', 'No fingerprint registered on this device. Log in with password first, then set up fingerprint.', 'error');
+    return;
   }
 
-  // ---- ATTEMPT 2: Discoverable flow (no allowCredentials) ----
+  console.log('🔐 Attempting biometric login with credential:', credId.slice(0, 50));
+
   try {
-    console.log('🔍 Attempt 2: discoverable flow');
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
+        // ✅ CRITICAL — pass the exact credential ID + transports
+        // This forces Chrome to use the DEVICE sensor, not Google Passkey vault
+        allowCredentials: [{
+          id: base64urlToBuffer(credId),
+          type: 'public-key',
+          transports: ['internal']
+        }],
         userVerification: 'required',
         timeout: 60000,
         rpId: RP_ID
       }
     });
 
-    if (assertion) {
-      const rawId = bufferToBase64url(assertion.rawId);
-      console.log('✅ Assertion (discoverable):', rawId.slice(0, 40));
-      
-      const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
-      saveTokens(result.tokens);
-      saveSetupState(result);
-      saveCredentialId(rawId);
-      showMsg('login', '✅ Fingerprint verified!', 'success');
-      setTimeout(() => routeToNextStep(result), 500);
+    if (!assertion) {
+      showMsg('login', 'Fingerprint verification failed', 'error');
       return;
     }
+
+    const rawId = bufferToBase64url(assertion.rawId);
+    console.log('✅ Assertion credential ID:', rawId.slice(0, 50));
+
+    const result = await api('/webauthn/login/', 'POST', {
+      credential_id: rawId
+    });
+
+    saveTokens(result.tokens);
+    saveSetupState(result);
+    // Keep localStorage credential in sync
+    localStorage.setItem('arena_credential_id', rawId);
+
+    showMsg('login', '✅ Fingerprint verified!', 'success');
+    setTimeout(() => routeToNextStep(result), 500);
+
   } catch (e) {
-    console.error('❌ Attempt 2 failed:', e.name, e.message);
+    console.error('❌ Biometric login error:', e.name, e.message);
+    let msg = 'Fingerprint not recognized.';
     if (e.name === 'NotAllowedError') {
-      showMsg('login', 'No fingerprint credentials found on this device. Log in with password first, then re-register your fingerprint.', 'error');
-    } else {
-      showMsg('login', 'Fingerprint not recognized. Use password or PIN.', 'error');
+      msg = 'Fingerprint cancelled or no credentials found on this device. Try logging in with password, then re-register fingerprint.';
+    } else if (e.name === 'InvalidStateError') {
+      msg = 'The saved fingerprint no longer exists on this device. Log in with password first.';
+    } else if (e.name === 'AbortError') {
+      msg = 'Fingerprint verification was cancelled.';
     }
+    showMsg('login', '❌ ' + msg, 'error');
   }
 }
 
@@ -1180,7 +1057,7 @@ async function handleGoogleAuth() {
   showMsg('signup', 'Google Sign-In coming soon. Use email/password.', 'info');
 }
 
-// ==================== HOME — LOBBY ====================
+// ==================== HOME ====================
 async function loadHome() {
   try {
     const user = await api('/profile/');
@@ -1194,6 +1071,7 @@ async function loadHome() {
 
     document.getElementById('wallet-bal').textContent = '₦8,200';
     showView('view-home');
+
   } catch (err) {
     console.error('Home load error:', err);
     showMsg('login', 'Session expired. Please log in again.', 'error');
@@ -1210,40 +1088,22 @@ function startGame() {
   verifyFingerprintForGame();
 }
 
-// ==================== GAME FINGERPRINT VERIFY ====================
 async function verifyFingerprintForGame() {
-  const storedCredId = getCredentialId();
-  
-  // Try with stored ID first
-  if (storedCredId) {
-    try {
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          allowCredentials: [{
-            id: base64urlToBuffer(storedCredId),
-            type: 'public-key',
-            transports: ['internal', 'hybrid']
-          }],
-          userVerification: 'required',
-          timeout: 60000,
-          rpId: RP_ID
-        }
-      });
-      if (assertion) {
-        window.open(GAME_URL, '_blank', 'noopener');
-        return;
-      }
-    } catch (e) {
-      console.warn('Game verify attempt 1 failed:', e.name);
-    }
+  const credId = localStorage.getItem('arena_credential_id');
+  if (!credId) {
+    alert('⚠️ No fingerprint registered. Please set up first.');
+    showView('view-biometric');
+    return;
   }
-
-  // Fallback: discoverable flow
   try {
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{
+          id: base64urlToBuffer(credId),
+          type: 'public-key',
+          transports: ['internal']
+        }],
         userVerification: 'required',
         timeout: 60000,
         rpId: RP_ID
@@ -1253,20 +1113,19 @@ async function verifyFingerprintForGame() {
       window.open(GAME_URL, '_blank', 'noopener');
     }
   } catch (e) {
-    console.error('Game verify failed:', e);
+    console.error(e);
     alert('❌ Fingerprint not verified. Cannot start game.');
   }
 }
 
 // ==================== LOGOUT ====================
 function handleLogout() {
+  // NOTE: We do NOT clear arena_credential_id here — keep it so biometric
+  // login works after logout. Only clear the session tokens.
   localStorage.removeItem('arena_access');
   localStorage.removeItem('arena_refresh');
-  localStorage.removeItem('arena_email');
-  localStorage.removeItem('arena_name');
-  localStorage.removeItem('arena_has_pin');
-  localStorage.removeItem('arena_has_bio');
-  clearCredentialId();
+  // Keep: arena_credential_id, arena_email, arena_has_pin, arena_has_bio, arena_name
+
   accessToken = null;
   refreshToken = null;
   hasPin = false;
@@ -1298,56 +1157,67 @@ if (stage && cube) {
 let globeInitialized = false;
 function initGlobe() {
   if (globeInitialized) return;
-  if (typeof THREE === 'undefined') { console.warn('Three.js not loaded'); return; }
+  if (typeof THREE === 'undefined') return;
   globeInitialized = true;
 
-  const DEST_URL = GAME_URL;
+  function goToStage(){ window.open(GAME_URL, '_blank', 'noopener'); }
   document.getElementById('joinBtn').addEventListener('click', () => {
-    if (!hasBiometric) { alert('⚠️ Please set up fingerprint first to join.'); showView('view-biometric'); return; }
+    if (!hasBiometric) { showView('view-biometric'); return; }
     verifyFingerprintForGame();
   });
   document.getElementById('globeStage').addEventListener('click', () => {
-    if (!hasBiometric) { alert('⚠️ Please set up fingerprint first to join.'); showView('view-biometric'); return; }
+    if (!hasBiometric) { showView('view-biometric'); return; }
     verifyFingerprintForGame();
   });
 
-  function buildGlobeTexture() {
+  function buildGlobeTexture(){
     const w = 1024, h = 512;
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const ctx = c.getContext('2d');
     const ocean = ctx.createLinearGradient(0, 0, 0, h);
-    ocean.addColorStop(0, '#16233F'); ocean.addColorStop(1, '#0B1426');
-    ctx.fillStyle = ocean; ctx.fillRect(0, 0, w, h);
+    ocean.addColorStop(0, '#16233F');
+    ocean.addColorStop(1, '#0B1426');
+    ctx.fillStyle = ocean;
+    ctx.fillRect(0, 0, w, h);
 
     let seed = 42;
-    function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-    function blob(cx, cy, r, color) {
-      ctx.fillStyle = color; ctx.beginPath();
+    function rand(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    function blob(cx, cy, r, color){
+      ctx.fillStyle = color;
+      ctx.beginPath();
       const pts = 10;
-      for (let i = 0; i <= pts; i++) {
+      for (let i = 0; i <= pts; i++){
         const a = (i / pts) * Math.PI * 2;
         const rr = r * (0.7 + rand() * 0.6);
-        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.7;
+        const x = cx + Math.cos(a) * rr;
+        const y = cy + Math.sin(a) * rr * 0.7;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      ctx.closePath(); ctx.fill();
+      ctx.closePath();
+      ctx.fill();
     }
     const landColors = ['#3FC7B0', '#33A895', '#E8B94C', '#C9A23E'];
-    for (let i = 0; i < 16; i++) {
-      const cx = rand() * w, cy = h * 0.18 + rand() * h * 0.64;
+    for (let i = 0; i < 16; i++){
+      const cx = rand() * w;
+      const cy = h * 0.18 + rand() * h * 0.64;
       const r = 26 + rand() * 46;
       const color = landColors[Math.floor(rand() * landColors.length)];
       ctx.globalAlpha = 0.85;
       blob(cx, cy, r, color);
-      for (let j = 0; j < 1 + Math.floor(rand() * 2); j++) {
+      for (let j = 0; j < 2; j++){
         blob(cx + (rand() - 0.5) * r * 1.4, cy + (rand() - 0.5) * r * 1.0, r * (0.35 + rand() * 0.3), color);
       }
     }
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = 'rgba(237,239,244,0.10)'; ctx.lineWidth = 1;
-    for (let lon = 0; lon <= w; lon += w / 12) { ctx.beginPath(); ctx.moveTo(lon, 0); ctx.lineTo(lon, h); ctx.stroke(); }
-    for (let lat = 0; lat <= h; lat += h / 6) { ctx.beginPath(); ctx.moveTo(0, lat); ctx.lineTo(w, lat); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(237,239,244,0.10)';
+    ctx.lineWidth = 1;
+    for (let lon = 0; lon <= w; lon += w / 12){
+      ctx.beginPath(); ctx.moveTo(lon, 0); ctx.lineTo(lon, h); ctx.stroke();
+    }
+    for (let lat = 0; lat <= h; lat += h / 6){
+      ctx.beginPath(); ctx.moveTo(0, lat); ctx.lineTo(w, lat); ctx.stroke();
+    }
     ctx.strokeStyle = 'rgba(232,185,76,0.22)';
     ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
     return c;
@@ -1381,12 +1251,14 @@ function initGlobe() {
   scene.add(wire);
 
   const keyLight = new THREE.DirectionalLight(0xE8B94C, 1.15);
-  keyLight.position.set(3.2, 1.6, 2.4); scene.add(keyLight);
+  keyLight.position.set(3.2, 1.6, 2.4);
+  scene.add(keyLight);
   const fillLight = new THREE.DirectionalLight(0x3FC7B0, 0.55);
-  fillLight.position.set(-3, -1.2, -2); scene.add(fillLight);
+  fillLight.position.set(-3, -1.2, -2);
+  scene.add(fillLight);
   scene.add(new THREE.AmbientLight(0x1a2338, 0.9));
 
-  function resize() {
+  function resize(){
     const size = stageEl.clientWidth || 260;
     renderer.setSize(size, size, false);
     camera.aspect = 1;
@@ -1396,9 +1268,12 @@ function initGlobe() {
   resize();
 
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function animate() {
+  function animate(){
     requestAnimationFrame(animate);
-    if (!reduceMotion) { globe.rotation.y += 0.0032; wire.rotation.y -= 0.0011; }
+    if (!reduceMotion){
+      globe.rotation.y += 0.0032;
+      wire.rotation.y -= 0.0011;
+    }
     renderer.render(scene, camera);
   }
   animate();
@@ -1416,11 +1291,17 @@ function initGlobe() {
     routeToNextStep(profile);
   } catch (err) {
     console.log('Session restore failed:', err);
-    handleLogout();
+    // Don't force logout — just clear tokens but keep biometric data
+    localStorage.removeItem('arena_access');
+    localStorage.removeItem('arena_refresh');
+    accessToken = null;
+    refreshToken = null;
+    showView('view-landing');
   }
 })();
 
 console.log('Voddic Arena loaded ✅');
+console.log('RP_ID:', RP_ID);
 </script>
 </body>
 </html>
