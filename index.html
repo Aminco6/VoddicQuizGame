@@ -984,32 +984,47 @@ async function setupPlatformBiometric() {
 
   try {
     const email = userEmail || 'user@voddic.com';
+    // STABLE user.id from email (16 bytes, deterministic)
     const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
     const userId = new Uint8Array(hashBuf).slice(0, 16);
 
+    // Step 1: Request credentials WITHOUT excludeCredentials so phone allows multiple
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         rp: { name: 'Voddic Arena', id: 'quiz.voddic.com.ng' },
         user: { id: userId, name: email, displayName: userName || email.split('@')[0] },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 }
+        ],
         authenticatorSelection: {
           authenticatorAttachment: 'platform',
           userVerification: 'required',
-          residentKey: 'discouraged',
+          residentKey: 'preferred',      // ← changed from 'discouraged'
           requireResidentKey: false
         },
-        timeout: 60000,
-        attestation: 'none'
+        timeout: 90000,
+        attestation: 'none',
+        extensions: {
+          credProps: true  // Ask browser to report if credential is discoverable
+        }
       }
     });
 
     const rawId = bufferToBase64url(credential.rawId);
+    const clientExtResults = credential.getClientExtensionResults();
+    
+    console.log('🔐 New credential created:', rawId.slice(0, 40));
+    console.log('   credProps:', clientExtResults.credProps);
+    console.log('   isDiscoverable:', clientExtResults.credProps?.rk);
 
-    await api('/webauthn/register/', 'POST', {
+    // Send to backend
+    const response = await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
-      device_name: navigator.userAgent.substring(0, 100)
+      device_name: navigator.userAgent.substring(0, 100),
+      is_discoverable: clientExtResults.credProps?.rk || false
     });
 
     localStorage.setItem('arena_credential_id', rawId);
@@ -1025,12 +1040,15 @@ async function setupPlatformBiometric() {
     setTimeout(() => loadHome(), 1200);
     return true;
   } catch (e) {
-    console.error('Biometric error:', e);
+    console.error('❌ Biometric error:', e);
     let msg = 'Setup failed. ';
-    if (e.name === 'NotAllowedError') msg = 'Cancelled or already registered. Delete any saved passkey for voddic.com.ng in phone Settings, then try again.';
-    else if (e.name === 'InvalidStateError') msg = 'This device already has a fingerprint for Voddic Arena.';
-    else if (e.name === 'NotSupportedError') msg = 'Device does not support fingerprint.';
-    else msg += (e.message || e.name);
+    if (e.name === 'NotAllowedError') {
+      msg = 'Fingerprint cancelled or blocked. If you have a saved passkey for this site in your phone Settings → Passwords, DELETE it and try again.';
+    } else if (e.name === 'InvalidStateError') {
+      msg = 'This device already has a fingerprint for this account. Try logging in instead.';
+    } else if (e.name === 'NotSupportedError') {
+      msg = 'Device does not support fingerprint.';
+    } else msg += (e.message || e.name);
     showMsg('bio', '❌ ' + msg, 'error');
     setLoading('bio-setup-btn', false);
     document.getElementById('bio-setup-btn').textContent = '👆 Try Again';
@@ -1038,41 +1056,50 @@ async function setupPlatformBiometric() {
   }
 }
 
+
+
 async function handleBiometricLogin() {
   if (!window.PublicKeyCredential) {
-    showMsg('login', 'Biometric not supported', 'error'); return;
-  }
-  const storedCredId = localStorage.getItem('arena_credential_id');
-  if (!storedCredId) {
-    showMsg('login', 'No fingerprint registered on this device. Log in with password first.', 'error');
+    showMsg('login', 'Biometric not supported', 'error');
     return;
   }
+  
   try {
+    // Discoverable credential flow — no allowCredentials
+    // The phone will show ALL passkeys for this site
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        allowCredentials: [{
-          id: base64urlToBuffer(storedCredId),
-          type: 'public-key',
-          transports: ['internal']
-        }],
         userVerification: 'required',
         timeout: 60000,
         rpId: 'quiz.voddic.com.ng'
       }
     });
+    
     if (assertion) {
-      const result = await api('/webauthn/login/', 'POST', { credential_id: storedCredId });
+      const rawId = bufferToBase64url(assertion.rawId);
+      console.log('🔑 Assertion credential ID:', rawId.slice(0, 40));
+      
+      const result = await api('/webauthn/login/', 'POST', { 
+        credential_id: rawId 
+      });
       saveTokens(result.tokens);
       saveSetupState(result);
+      localStorage.setItem('arena_credential_id', rawId);
+      
       showMsg('login', '✅ Fingerprint verified!', 'success');
       setTimeout(() => routeToNextStep(result), 500);
     }
   } catch (e) {
-    console.error(e);
-    showMsg('login', 'Fingerprint not recognized. Use password or PIN.', 'error');
+    console.error('Biometric login error:', e);
+    let msg = 'Fingerprint not recognized.';
+    if (e.name === 'NotAllowedError') msg = 'Fingerprint cancelled or no credentials found.';
+    showMsg('login', msg + ' Use password or PIN.', 'error');
   }
 }
+
+
+
 
 // ==================== PASSWORD RESET ====================
 async function handlePasswordReset(e) {
@@ -1124,33 +1151,29 @@ function startGame() {
 }
 
 async function verifyFingerprintForGame() {
-  const storedCredId = localStorage.getItem('arena_credential_id');
-  if (!storedCredId) {
-    alert('⚠️ No fingerprint registered. Please set up first.');
-    showView('view-biometric');
-    return;
-  }
   try {
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        allowCredentials: [{
-          id: base64urlToBuffer(storedCredId),
-          type: 'public-key',
-          transports: ['internal']
-        }],
+        // No allowCredentials — discoverable credentials
         userVerification: 'required',
         timeout: 60000,
         rpId: 'quiz.voddic.com.ng'
       }
     });
+    
     if (assertion) {
+      // Verified — open game
       window.open(GAME_URL, '_blank', 'noopener');
     }
   } catch (e) {
+    console.error('Fingerprint verify error:', e);
     alert('❌ Fingerprint not verified. Cannot start game.');
   }
 }
+
+
+
 
 // ==================== LOGOUT ====================
 function handleLogout() {
