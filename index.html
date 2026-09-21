@@ -1057,44 +1057,59 @@ async function setupPlatformBiometric() {
 
 
 
-
-
 async function handleBiometricLogin() {
   if (!window.PublicKeyCredential) {
     showMsg('login', 'Biometric not supported', 'error');
     return;
   }
+
+  const storedCredId = localStorage.getItem('arena_credential_id');
   
+  if (!storedCredId) {
+    showMsg('login', 'No fingerprint registered on this device. Log in with password, then set up fingerprint again.', 'error');
+    return;
+  }
+
+  console.log('🔑 Using stored credential ID:', storedCredId.slice(0, 40));
+
   try {
-    // Discoverable credential flow — no allowCredentials
-    // The phone will show ALL passkeys for this site
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
+        // ✅ REQUIRED for non-discoverable credentials:
+        allowCredentials: [{
+          id: base64urlToBuffer(storedCredId),
+          type: 'public-key',
+          transports: ['internal']   // ✅ device sensor only
+        }],
         userVerification: 'required',
         timeout: 60000,
         rpId: 'quiz.voddic.com.ng'
       }
     });
-    
+
     if (assertion) {
       const rawId = bufferToBase64url(assertion.rawId);
-      console.log('🔑 Assertion credential ID:', rawId.slice(0, 40));
+      console.log('✅ Assertion succeeded:', rawId.slice(0, 40));
       
+      // Backend lookup
       const result = await api('/webauthn/login/', 'POST', { 
         credential_id: rawId 
       });
+      
       saveTokens(result.tokens);
       saveSetupState(result);
-      localStorage.setItem('arena_credential_id', rawId);
-      
       showMsg('login', '✅ Fingerprint verified!', 'success');
       setTimeout(() => routeToNextStep(result), 500);
     }
   } catch (e) {
     console.error('Biometric login error:', e);
     let msg = 'Fingerprint not recognized.';
-    if (e.name === 'NotAllowedError') msg = 'Fingerprint cancelled or no credentials found.';
+    if (e.name === 'NotAllowedError') {
+      msg = 'Fingerprint cancelled. Try again, or use password/PIN.';
+    } else if (e.name === 'InvalidStateError') {
+      msg = 'No valid fingerprint found on this device. Please log in with password and re-register.';
+    }
     showMsg('login', msg + ' Use password or PIN.', 'error');
   }
 }
