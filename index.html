@@ -684,6 +684,7 @@
 // ==================== CONFIG ====================
 const API_BASE = 'https://connectapi.voddic.com.ng/api/v1/auth';
 const GAME_URL = 'https://claude.ai/artifact/9BU4zyM7fxZNWzZvrtZTZi';
+const RP_ID = 'quiz.voddic.com.ng';
 
 let accessToken = localStorage.getItem('arena_access');
 let refreshToken = localStorage.getItem('arena_refresh');
@@ -698,18 +699,44 @@ let pinMode = 'setup';
 let pinStage = 'first';
 let firstPin = '';
 
+// ==================== CREDENTIAL ID STORAGE (belt & braces) ====================
+function saveCredentialId(id) {
+  try { localStorage.setItem('arena_credential_id', id); } catch (e) {}
+  try { sessionStorage.setItem('arena_credential_id', id); } catch (e) {}
+  try {
+    document.cookie = `arena_cid=${encodeURIComponent(id)}; max-age=31536000; path=/; secure; samesite=lax`;
+  } catch (e) {}
+}
+
+function getCredentialId() {
+  let id = null;
+  try { id = localStorage.getItem('arena_credential_id'); } catch (e) {}
+  if (id) return id;
+  try { id = sessionStorage.getItem('arena_credential_id'); } catch (e) {}
+  if (id) return id;
+  try {
+    const m = document.cookie.match(/arena_cid=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch (e) {}
+  return null;
+}
+
+function clearCredentialId() {
+  try { localStorage.removeItem('arena_credential_id'); } catch (e) {}
+  try { sessionStorage.removeItem('arena_credential_id'); } catch (e) {}
+  try { document.cookie = 'arena_cid=; max-age=0; path=/'; } catch (e) {}
+}
+
 // ==================== VIEW ROUTER ====================
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const t = document.getElementById(id);
   if (t) t.classList.add('active');
-  // Toggle join bar visibility
   const jb = document.getElementById('joinBar');
   if (jb) jb.classList.toggle('hidden', id !== 'view-home');
   window.scrollTo(0, 0);
-  // If entering lobby, init the globe
   if (id === 'view-home') {
-    setTimeout(() => { try { initGlobe(); } catch(e) { console.warn('Globe init:', e); } }, 60);
+    setTimeout(() => { try { initGlobe(); } catch(e) { console.warn('Globe:', e); } }, 60);
   }
 }
 
@@ -718,7 +745,7 @@ function showMsg(viewId, text, type) {
   if (msg) {
     msg.textContent = text;
     msg.className = 'message show ' + type;
-    if (type !== 'info') setTimeout(() => msg.classList.remove('show'), 5000);
+    if (type !== 'info') setTimeout(() => msg.classList.remove('show'), 6000);
   }
 }
 
@@ -798,10 +825,13 @@ function saveTokens(data) {
 function saveSetupState(data) {
   hasPin = !!data.has_pin;
   hasBiometric = !!data.has_biometric;
-  localStorage.setItem('arena_has_pin', hasPin);
-  localStorage.setItem('arena_has_bio', hasBiometric);
+  try {
+    localStorage.setItem('arena_has_pin', hasPin);
+    localStorage.setItem('arena_has_bio', hasBiometric);
+  } catch (e) {}
 }
 
+// ==================== BASE64URL ====================
 function bufferToBase64url(buffer) {
   const bytes = new Uint8Array(buffer);
   let s = '';
@@ -847,7 +877,7 @@ async function handleSignup(e) {
   setLoading('signup-btn', false);
 }
 
-// ==================== LOGIN ====================
+// ==================== LOGIN (PASSWORD) ====================
 async function handleLogin(e) {
   e.preventDefault();
   setLoading('login-btn', true, 'Logging in...');
@@ -966,7 +996,7 @@ async function submitPin() {
   }
 }
 
-// ==================== BIOMETRIC ====================
+// ==================== BIOMETRIC REGISTRATION ====================
 async function setupPlatformBiometric() {
   if (!window.PublicKeyCredential) {
     showMsg('bio', '❌ Biometric not supported on this device', 'error');
@@ -990,46 +1020,41 @@ async function setupPlatformBiometric() {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'Voddic Arena', id: 'quiz.voddic.com.ng' },
+        rp: { name: 'Voddic Arena', id: RP_ID },
         user: { id: userId, name: email, displayName: userName || email.split('@')[0] },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
           { type: 'public-key', alg: -257 }
         ],
         authenticatorSelection: {
-          authenticatorAttachment: 'platform',    // ✅ device sensor only
-          userVerification: 'required',           // ✅ force biometric
-          residentKey: 'discouraged',             // ✅ NO cloud sync
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'discouraged',
           requireResidentKey: false
         },
-        excludeCredentials: [],                   // ✅ don't exclude anything
+        excludeCredentials: [],
         timeout: 90000,
         attestation: 'none',
-        extensions: {
-          // ✅ Tell browser: we do NOT want synced passkeys
-          'credProps': true,
-          'uvm': true
-        }
+        extensions: { credProps: true, uvm: true }
       }
     });
 
     const rawId = bufferToBase64url(credential.rawId);
-    const clientExtResults = credential.getClientExtensionResults();
+    const ext = credential.getClientExtensionResults();
+    const isDiscoverable = ext.credProps ? ext.credProps.rk : false;
     
-    console.log('🔐 Credential created');
-    console.log('   rawId:', rawId.slice(0, 40));
-    console.log('   credProps:', clientExtResults.credProps);
-    console.log('   UVM (how user was verified):', clientExtResults.uvm);
+    console.log('🔐 Credential created:', rawId.slice(0, 40), 'discoverable:', isDiscoverable);
 
-    // Delete any old credentials for this device BEFORE saving the new one
+    // Save to backend
     await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
       device_name: navigator.userAgent.substring(0, 100),
-      is_discoverable: clientExtResults.credProps?.rk || false
+      is_discoverable: isDiscoverable
     });
 
-    localStorage.setItem('arena_credential_id', rawId);
+    // ✅ Save credential ID to localStorage + sessionStorage + cookie
+    saveCredentialId(rawId);
     hasBiometric = true;
     localStorage.setItem('arena_has_bio', 'true');
 
@@ -1055,67 +1080,89 @@ async function setupPlatformBiometric() {
   }
 }
 
-
-
+// ==================== BIOMETRIC LOGIN ====================
 async function handleBiometricLogin() {
   if (!window.PublicKeyCredential) {
     showMsg('login', 'Biometric not supported', 'error');
     return;
   }
 
-  const storedCredId = localStorage.getItem('arena_credential_id');
-  
-  if (!storedCredId) {
-    showMsg('login', 'No fingerprint registered on this device. Log in with password, then set up fingerprint again.', 'error');
-    return;
+  const storedCredId = getCredentialId();
+  console.log('🔑 Stored credential ID:', storedCredId ? storedCredId.slice(0, 40) + '...' : 'NONE');
+
+  // ---- ATTEMPT 1: With stored credential ID (works for non-discoverable) ----
+  if (storedCredId) {
+    try {
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          allowCredentials: [{
+            id: base64urlToBuffer(storedCredId),
+            type: 'public-key',
+            transports: ['internal', 'hybrid']
+          }],
+          userVerification: 'required',
+          timeout: 60000,
+          rpId: RP_ID
+        }
+      });
+
+      if (assertion) {
+        const rawId = bufferToBase64url(assertion.rawId);
+        console.log('✅ Assertion (with ID):', rawId.slice(0, 40));
+        
+        const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
+        saveTokens(result.tokens);
+        saveSetupState(result);
+        saveCredentialId(rawId);  // keep in sync
+        showMsg('login', '✅ Fingerprint verified!', 'success');
+        setTimeout(() => routeToNextStep(result), 500);
+        return;
+      }
+    } catch (e) {
+      console.warn('⚠️ Attempt 1 (with ID) failed:', e.name, e.message);
+      // If user cancelled, don't try attempt 2
+      if (e.name === 'NotAllowedError' && e.message && e.message.toLowerCase().includes('cancel')) {
+        showMsg('login', 'Fingerprint cancelled. Try again or use password.', 'error');
+        return;
+      }
+      // Otherwise fall through to attempt 2
+    }
   }
 
-  console.log('🔑 Using stored credential ID:', storedCredId.slice(0, 40));
-
+  // ---- ATTEMPT 2: Discoverable flow (no allowCredentials) ----
   try {
+    console.log('🔍 Attempt 2: discoverable flow');
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        // ✅ REQUIRED for non-discoverable credentials:
-        allowCredentials: [{
-          id: base64urlToBuffer(storedCredId),
-          type: 'public-key',
-          transports: ['internal']   // ✅ device sensor only
-        }],
         userVerification: 'required',
         timeout: 60000,
-        rpId: 'quiz.voddic.com.ng'
+        rpId: RP_ID
       }
     });
 
     if (assertion) {
       const rawId = bufferToBase64url(assertion.rawId);
-      console.log('✅ Assertion succeeded:', rawId.slice(0, 40));
+      console.log('✅ Assertion (discoverable):', rawId.slice(0, 40));
       
-      // Backend lookup
-      const result = await api('/webauthn/login/', 'POST', { 
-        credential_id: rawId 
-      });
-      
+      const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
       saveTokens(result.tokens);
       saveSetupState(result);
+      saveCredentialId(rawId);
       showMsg('login', '✅ Fingerprint verified!', 'success');
       setTimeout(() => routeToNextStep(result), 500);
+      return;
     }
   } catch (e) {
-    console.error('Biometric login error:', e);
-    let msg = 'Fingerprint not recognized.';
+    console.error('❌ Attempt 2 failed:', e.name, e.message);
     if (e.name === 'NotAllowedError') {
-      msg = 'Fingerprint cancelled. Try again, or use password/PIN.';
-    } else if (e.name === 'InvalidStateError') {
-      msg = 'No valid fingerprint found on this device. Please log in with password and re-register.';
+      showMsg('login', 'No fingerprint credentials found on this device. Log in with password first, then re-register your fingerprint.', 'error');
+    } else {
+      showMsg('login', 'Fingerprint not recognized. Use password or PIN.', 'error');
     }
-    showMsg('login', msg + ' Use password or PIN.', 'error');
   }
 }
-
-
-
 
 // ==================== PASSWORD RESET ====================
 async function handlePasswordReset(e) {
@@ -1142,13 +1189,10 @@ async function loadHome() {
     localStorage.setItem('arena_has_pin', hasPin);
     localStorage.setItem('arena_has_bio', hasBiometric);
 
-    // Gate — no lobby access without full setup
     if (!hasPin) { startPinSetup(); return; }
     if (!hasBiometric) { showView('view-biometric'); return; }
 
-    // Load wallet balance if available (falls back to demo)
     document.getElementById('wallet-bal').textContent = '₦8,200';
-
     showView('view-home');
   } catch (err) {
     console.error('Home load error:', err);
@@ -1166,40 +1210,63 @@ function startGame() {
   verifyFingerprintForGame();
 }
 
+// ==================== GAME FINGERPRINT VERIFY ====================
 async function verifyFingerprintForGame() {
+  const storedCredId = getCredentialId();
+  
+  // Try with stored ID first
+  if (storedCredId) {
+    try {
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          allowCredentials: [{
+            id: base64urlToBuffer(storedCredId),
+            type: 'public-key',
+            transports: ['internal', 'hybrid']
+          }],
+          userVerification: 'required',
+          timeout: 60000,
+          rpId: RP_ID
+        }
+      });
+      if (assertion) {
+        window.open(GAME_URL, '_blank', 'noopener');
+        return;
+      }
+    } catch (e) {
+      console.warn('Game verify attempt 1 failed:', e.name);
+    }
+  }
+
+  // Fallback: discoverable flow
   try {
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        // No allowCredentials — discoverable credentials
         userVerification: 'required',
         timeout: 60000,
-        rpId: 'quiz.voddic.com.ng'
+        rpId: RP_ID
       }
     });
-    
     if (assertion) {
-      // Verified — open game
       window.open(GAME_URL, '_blank', 'noopener');
     }
   } catch (e) {
-    console.error('Fingerprint verify error:', e);
+    console.error('Game verify failed:', e);
     alert('❌ Fingerprint not verified. Cannot start game.');
   }
 }
-
-
-
 
 // ==================== LOGOUT ====================
 function handleLogout() {
   localStorage.removeItem('arena_access');
   localStorage.removeItem('arena_refresh');
-  localStorage.removeItem('arena_credential_id');
   localStorage.removeItem('arena_email');
   localStorage.removeItem('arena_name');
   localStorage.removeItem('arena_has_pin');
   localStorage.removeItem('arena_has_bio');
+  clearCredentialId();
   accessToken = null;
   refreshToken = null;
   hasPin = false;
@@ -1227,85 +1294,62 @@ if (stage && cube) {
   stage.addEventListener('pointerup', () => cube.style.animationPlayState = 'running');
 }
 
-// ==================== GLOBE (Three.js) ====================
+// ==================== GLOBE ====================
 let globeInitialized = false;
 function initGlobe() {
   if (globeInitialized) return;
-  if (typeof THREE === 'undefined') {
-    console.warn('Three.js not loaded');
-    return;
-  }
+  if (typeof THREE === 'undefined') { console.warn('Three.js not loaded'); return; }
   globeInitialized = true;
 
   const DEST_URL = GAME_URL;
-  function goToStage(){ window.open(DEST_URL, '_blank', 'noopener'); }
-  document.getElementById('joinBtn').addEventListener('click', goToStage);
+  document.getElementById('joinBtn').addEventListener('click', () => {
+    if (!hasBiometric) { alert('⚠️ Please set up fingerprint first to join.'); showView('view-biometric'); return; }
+    verifyFingerprintForGame();
+  });
   document.getElementById('globeStage').addEventListener('click', () => {
-    if (!hasBiometric) {
-      alert('⚠️ Please set up fingerprint first to join.');
-      showView('view-biometric');
-      return;
-    }
+    if (!hasBiometric) { alert('⚠️ Please set up fingerprint first to join.'); showView('view-biometric'); return; }
     verifyFingerprintForGame();
   });
 
-  // ---- Procedural globe texture ----
-  function buildGlobeTexture(){
+  function buildGlobeTexture() {
     const w = 1024, h = 512;
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const ctx = c.getContext('2d');
-
     const ocean = ctx.createLinearGradient(0, 0, 0, h);
-    ocean.addColorStop(0, '#16233F');
-    ocean.addColorStop(1, '#0B1426');
-    ctx.fillStyle = ocean;
-    ctx.fillRect(0, 0, w, h);
+    ocean.addColorStop(0, '#16233F'); ocean.addColorStop(1, '#0B1426');
+    ctx.fillStyle = ocean; ctx.fillRect(0, 0, w, h);
 
     let seed = 42;
-    function rand(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-
-    function blob(cx, cy, r, color){
-      ctx.fillStyle = color;
-      ctx.beginPath();
+    function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    function blob(cx, cy, r, color) {
+      ctx.fillStyle = color; ctx.beginPath();
       const pts = 10;
-      for (let i = 0; i <= pts; i++){
+      for (let i = 0; i <= pts; i++) {
         const a = (i / pts) * Math.PI * 2;
         const rr = r * (0.7 + rand() * 0.6);
-        const x = cx + Math.cos(a) * rr;
-        const y = cy + Math.sin(a) * rr * 0.7;
+        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.7;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      ctx.closePath();
-      ctx.fill();
+      ctx.closePath(); ctx.fill();
     }
-
     const landColors = ['#3FC7B0', '#33A895', '#E8B94C', '#C9A23E'];
-    for (let i = 0; i < 16; i++){
-      const cx = rand() * w;
-      const cy = h * 0.18 + rand() * h * 0.64;
+    for (let i = 0; i < 16; i++) {
+      const cx = rand() * w, cy = h * 0.18 + rand() * h * 0.64;
       const r = 26 + rand() * 46;
       const color = landColors[Math.floor(rand() * landColors.length)];
       ctx.globalAlpha = 0.85;
       blob(cx, cy, r, color);
-      const extra = 1 + Math.floor(rand() * 2);
-      for (let j = 0; j < extra; j++){
+      for (let j = 0; j < 1 + Math.floor(rand() * 2); j++) {
         blob(cx + (rand() - 0.5) * r * 1.4, cy + (rand() - 0.5) * r * 1.0, r * (0.35 + rand() * 0.3), color);
       }
     }
     ctx.globalAlpha = 1;
-
-    ctx.strokeStyle = 'rgba(237,239,244,0.10)';
-    ctx.lineWidth = 1;
-    for (let lon = 0; lon <= w; lon += w / 12){
-      ctx.beginPath(); ctx.moveTo(lon, 0); ctx.lineTo(lon, h); ctx.stroke();
-    }
-    for (let lat = 0; lat <= h; lat += h / 6){
-      ctx.beginPath(); ctx.moveTo(0, lat); ctx.lineTo(w, lat); ctx.stroke();
-    }
+    ctx.strokeStyle = 'rgba(237,239,244,0.10)'; ctx.lineWidth = 1;
+    for (let lon = 0; lon <= w; lon += w / 12) { ctx.beginPath(); ctx.moveTo(lon, 0); ctx.lineTo(lon, h); ctx.stroke(); }
+    for (let lat = 0; lat <= h; lat += h / 6) { ctx.beginPath(); ctx.moveTo(0, lat); ctx.lineTo(w, lat); ctx.stroke(); }
     ctx.strokeStyle = 'rgba(232,185,76,0.22)';
     ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
-
     return c;
   }
 
@@ -1323,30 +1367,26 @@ function initGlobe() {
   const texture = new THREE.CanvasTexture(buildGlobeTexture());
   texture.anisotropy = 4;
 
-  const sphereGeo = new THREE.SphereGeometry(2, 48, 48);
-  const sphereMat = new THREE.MeshPhongMaterial({
-    map: texture, shininess: 8, specular: new THREE.Color('#1a2338')
-  });
-  const globe = new THREE.Mesh(sphereGeo, sphereMat);
+  const globe = new THREE.Mesh(
+    new THREE.SphereGeometry(2, 48, 48),
+    new THREE.MeshPhongMaterial({ map: texture, shininess: 8, specular: new THREE.Color('#1a2338') })
+  );
   globe.rotation.z = 0.41;
   scene.add(globe);
 
-  const wireGeo = new THREE.SphereGeometry(2.04, 20, 14);
-  const wireMat = new THREE.MeshBasicMaterial({ color: 0xE8B94C, wireframe: true, transparent: true, opacity: 0.06 });
-  const wire = new THREE.Mesh(wireGeo, wireMat);
+  const wire = new THREE.Mesh(
+    new THREE.SphereGeometry(2.04, 20, 14),
+    new THREE.MeshBasicMaterial({ color: 0xE8B94C, wireframe: true, transparent: true, opacity: 0.06 })
+  );
   scene.add(wire);
 
   const keyLight = new THREE.DirectionalLight(0xE8B94C, 1.15);
-  keyLight.position.set(3.2, 1.6, 2.4);
-  scene.add(keyLight);
-
+  keyLight.position.set(3.2, 1.6, 2.4); scene.add(keyLight);
   const fillLight = new THREE.DirectionalLight(0x3FC7B0, 0.55);
-  fillLight.position.set(-3, -1.2, -2);
-  scene.add(fillLight);
-
+  fillLight.position.set(-3, -1.2, -2); scene.add(fillLight);
   scene.add(new THREE.AmbientLight(0x1a2338, 0.9));
 
-  function resize(){
+  function resize() {
     const size = stageEl.clientWidth || 260;
     renderer.setSize(size, size, false);
     camera.aspect = 1;
@@ -1356,19 +1396,15 @@ function initGlobe() {
   resize();
 
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function animate(){
+  function animate() {
     requestAnimationFrame(animate);
-    if (!reduceMotion){
-      globe.rotation.y += 0.0032;
-      wire.rotation.y -= 0.0011;
-    }
+    if (!reduceMotion) { globe.rotation.y += 0.0032; wire.rotation.y -= 0.0011; }
     renderer.render(scene, camera);
   }
   animate();
 }
 
-// ==================== AUTO-RESTORE SESSION ====================
+// ==================== AUTO-RESTORE ====================
 (async function autoRestore() {
   if (!accessToken) return;
   try {
