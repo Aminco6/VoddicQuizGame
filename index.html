@@ -8,6 +8,288 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+
+/* ===== Enhanced PIN UI ===== */
+.pin-visual{
+  position:relative;
+  width:140px;
+  height:140px;
+  margin:24px auto 8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.pin-glow{
+  position:absolute;
+  inset:-20%;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(232,185,76,0.35) 0%, rgba(155,107,240,0.15) 45%, transparent 70%);
+  filter:blur(10px);
+  animation:pinGlow 3s ease-in-out infinite;
+}
+@keyframes pinGlow{
+  0%,100%{ transform:scale(1); opacity:0.75; }
+  50%{ transform:scale(1.15); opacity:1; }
+}
+.pin-lock-icon{
+  position:relative;
+  z-index:2;
+  width:80px;
+  height:80px;
+  border-radius:24px;
+  background:linear-gradient(145deg, rgba(232,185,76,0.2), rgba(232,185,76,0.05));
+  border:2px solid rgba(232,185,76,0.5);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:36px;
+  transition:all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pin-lock-icon.unlocked{
+  background:linear-gradient(145deg, rgba(63,199,176,0.3), rgba(63,199,176,0.1));
+  border-color:rgba(63,199,176,0.7);
+  transform:scale(1.05);
+}
+.pin-rings{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.pin-ring{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
+  border-radius:50%;
+  border:1px solid rgba(232,185,76,0.15);
+}
+.pin-ring.r1{ width:110px; height:110px; animation:ringPulse 3s ease-in-out infinite; }
+.pin-ring.r2{ width:140px; height:140px; animation:ringPulse 3s ease-in-out infinite 0.5s; }
+.pin-ring.r3{ width:170px; height:170px; animation:ringPulse 3s ease-in-out infinite 1s; border-style:dashed; }
+@keyframes ringPulse{
+  0%,100%{ opacity:0.3; transform:translate(-50%, -50%) scale(0.95); }
+  50%{ opacity:0.7; transform:translate(-50%, -50%) scale(1.05); }
+}
+
+.pin-display{
+  display:flex;
+  gap:14px;
+  justify-content:center;
+  margin:28px 0 22px;
+}
+.pin-dot{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(26,22,56,0.9);
+  border:2px solid #2c265a;
+  transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position:relative;
+}
+.pin-dot.filled{
+  background:linear-gradient(145deg, var(--gold-light), var(--gold));
+  border-color:var(--gold);
+  box-shadow:0 0 20px rgba(232,185,76,0.7), 0 0 40px rgba(232,185,76,0.3);
+  transform:scale(1.2);
+}
+.pin-dot.error{
+  background:linear-gradient(145deg, #ff6b7a, var(--error));
+  border-color:var(--error);
+  animation:pinShake 0.4s ease;
+}
+@keyframes pinShake{
+  0%,100%{ transform:translateX(0); }
+  25%{ transform:translateX(-6px); }
+  75%{ transform:translateX(6px); }
+}
+.pin-dot.success{
+  background:linear-gradient(145deg, #5eeaa0, var(--success));
+  border-color:var(--success);
+  box-shadow:0 0 20px rgba(63,199,176,0.7);
+}
+
+.pin-keypad{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+  max-width:300px;
+  margin:0 auto;
+  padding-bottom:24px;
+  position:relative;
+  z-index:5;
+}
+.pin-key{
+  height:64px;
+  border-radius:20px;
+  background:linear-gradient(145deg, rgba(26,22,56,0.9), rgba(26,22,56,0.6));
+  border:1.5px solid #2c265a;
+  color:#f5f3ff;
+  font-size:24px;
+  font-weight:600;
+  cursor:pointer;
+  text-align:center;
+  user-select:none;
+  transition:all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family:'Space Grotesk', system-ui, sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  -webkit-tap-highlight-color:transparent;
+}
+.pin-key:active,
+.pin-key.pressed{
+  transform:scale(0.9);
+  background:linear-gradient(145deg, rgba(232,185,76,0.25), rgba(232,185,76,0.1));
+  border-color:var(--gold);
+  color:var(--gold);
+  box-shadow:0 0 24px rgba(232,185,76,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.pin-key-empty{
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  cursor:default;
+  pointer-events:none;
+}
+.pin-key-back{
+  font-size:20px;
+  color:#a79fd1;
+}
+.pin-key-back:active{
+  color:#ff8f8e;
+  background:rgba(225,85,84,0.15);
+  border-color:rgba(225,85,84,0.4);
+  box-shadow:0 0 24px rgba(225,85,84,0.3);
+}
+
+
+
+
+
+
+
+
+
+
+
+.verify-icon-wrap{
+  width:100px; height:100px; border-radius:50%; margin:16px auto 0;
+  background:radial-gradient(circle at 35% 30%, rgba(232,185,76,0.35), rgba(232,185,76,0.05) 70%);
+  display:flex; align-items:center; justify-content:center; font-size:48px;
+  border:2px solid rgba(232,185,76,0.4);
+  animation:pulse2 2.5s ease-in-out infinite;
+}
+.code-input-grid{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:8px;
+  margin:20px 0 8px;
+}
+.code-input{
+  width:100%;
+  aspect-ratio:1;
+  max-height:56px;
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  font-family:'Space Grotesk', system-ui, sans-serif;
+  background:rgba(26,22,56,0.9);
+  border:2px solid #2c265a;
+  border-radius:12px;
+  color:#f5f3ff;
+  outline:none;
+  transition:all 0.2s ease;
+}
+.code-input:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(232,185,76,0.2);
+  transform:scale(1.05);
+}
+.code-input.filled{
+  background:linear-gradient(145deg, rgba(232,185,76,0.15), rgba(232,185,76,0.05));
+  border-color:rgba(232,185,76,0.5);
+}
+.code-input.error{
+  border-color:var(--error);
+  background:rgba(225,85,84,0.1);
+  animation:pinShake 0.4s ease;
+}
+
+
+
+
+
+
+
+
+
+<!-- PASSWORD RESET REQUEST -->
+<div class="view" id="view-reset">
+  <div class="auth-shell">
+    <div class="top-row"><button class="back-btn" onclick="showView('view-login')">←</button></div>
+    <div class="reset-icon-wrap">🔑</div>
+    <div class="heading-block" style="margin-top:14px;">
+      <div class="heading">Forgot password?</div>
+      <div class="subheading">Enter your email and we'll send you a 6-digit reset code.</div>
+    </div>
+    <form class="form" onsubmit="handlePasswordResetRequest(event)">
+      <div class="field"><label for="reset-email">Email address</label>
+        <div class="field-input-wrap"><span class="field-icon">📧</span>
+          <input id="reset-email" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+      </div>
+      <div class="message" id="reset-msg"></div>
+      <button type="submit" class="primary-btn" id="reset-btn">Send Reset Code</button>
+      <div class="switch-line">Remembered? <button type="button" onclick="showView('view-login')">Log In</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- PASSWORD RESET VERIFY -->
+<div class="view" id="view-reset-verify">
+  <div class="auth-shell">
+    <div class="top-row"><button class="back-btn" onclick="showView('view-reset')">←</button></div>
+    <div class="verify-icon-wrap">🔐</div>
+    <div class="heading-block" style="margin-top:14px;">
+      <div class="heading">Enter reset code</div>
+      <div class="subheading">We sent a code to <span id="reset-email-display" style="color:var(--gold-light);font-weight:700;"></span></div>
+    </div>
+    <form class="form" onsubmit="handlePasswordResetVerify(event)">
+      <div class="code-input-grid" id="reset-code-grid">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="0" autocomplete="one-time-code">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="1">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="2">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="3">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="5">
+      </div>
+      <div class="field" style="margin-top:16px;"><label for="reset-new-pass">New password</label>
+        <div class="field-input-wrap"><span class="field-icon">🔒</span>
+          <input id="reset-new-pass" type="password" placeholder="Min 8 characters" required minlength="8">
+          <button type="button" class="toggle-eye" data-target="reset-new-pass">👁</button>
+        </div>
+      </div>
+      <div class="field"><label for="reset-new-pass2">Confirm password</label>
+        <div class="field-input-wrap"><span class="field-icon">🔒</span>
+          <input id="reset-new-pass2" type="password" placeholder="Re-enter password" required minlength="8">
+        </div>
+      </div>
+      <div class="message" id="reset-verify-msg"></div>
+      <button type="submit" class="primary-btn" id="reset-verify-btn">Reset Password</button>
+    </form>
+  </div>
+</div>
+
+</style>
+
+
+
+
+
 <style>
   :root{
     --bg:#0B0F1A; --bg-2:#101827; --surface:#161F33; --surface-2:#1D2740; --line:#28324C;
@@ -444,35 +726,94 @@
   </div>
 </div>
 
-<!-- PIN -->
+
+
+
+
+<!-- EMAIL VERIFICATION -->
+<div class="view" id="view-verify">
+  <div class="auth-shell">
+    <div class="top-row">
+      <button class="back-btn" onclick="showView('view-signup')">←</button>
+    </div>
+    <div class="verify-icon-wrap">📧</div>
+    <div class="heading-block" style="margin-top:14px;">
+      <div class="heading">Check your email</div>
+      <div class="subheading">We sent a 6-digit code to <span id="verify-email-display" style="color:var(--gold-light);font-weight:700;"></span></div>
+    </div>
+    <form class="form" onsubmit="handleVerifyEmail(event)">
+      <div class="code-input-grid" id="code-input-grid">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="0" autocomplete="one-time-code">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="1">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="2">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="3">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+        <input class="code-input" type="tel" inputmode="numeric" maxlength="1" data-i="5">
+      </div>
+      <div class="message" id="verify-msg"></div>
+      <button type="submit" class="primary-btn" id="verify-btn">Verify Email</button>
+      <button type="button" class="secondary-btn" id="resend-code-btn" onclick="handleResendCode()">Resend code</button>
+      <div class="switch-line">Wrong email? <button type="button" onclick="showView('view-signup')">Sign up again</button></div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+
+<!-- <!-- PIN -->
 <div class="view" id="view-pin">
   <div class="auth-shell">
     <div class="top-row"><button class="back-btn" onclick="pinCancel()">←</button></div>
-    <div class="heading-block" style="margin-top:6px;">
+    
+    <div class="pin-visual">
+      <div class="pin-glow"></div>
+      <div class="pin-lock-icon" id="pin-lock-icon">🔒</div>
+      <div class="pin-rings">
+        <div class="pin-ring r1"></div>
+        <div class="pin-ring r2"></div>
+        <div class="pin-ring r3"></div>
+      </div>
+    </div>
+
+    <div class="heading-block" style="margin-top:8px;">
       <div class="heading" id="pin-title">Create your PIN</div>
-      <div class="subheading" id="pin-subtitle">Enter a 6-digit PIN. You'll use this + fingerprint to log in.</div>
+      <div class="subheading" id="pin-subtitle">Choose a 6-digit PIN to secure your account.</div>
     </div>
+
     <div class="pin-display" id="pin-display">
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot" data-i="0"></div>
+      <div class="pin-dot" data-i="1"></div>
+      <div class="pin-dot" data-i="2"></div>
+      <div class="pin-dot" data-i="3"></div>
+      <div class="pin-dot" data-i="4"></div>
+      <div class="pin-dot" data-i="5"></div>
     </div>
+
     <div class="message" id="pin-msg"></div>
+
     <div class="pin-keypad">
-      <button class="pin-key" onclick="pinInput('1')">1</button>
-      <button class="pin-key" onclick="pinInput('2')">2</button>
-      <button class="pin-key" onclick="pinInput('3')">3</button>
-      <button class="pin-key" onclick="pinInput('4')">4</button>
-      <button class="pin-key" onclick="pinInput('5')">5</button>
-      <button class="pin-key" onclick="pinInput('6')">6</button>
-      <button class="pin-key" onclick="pinInput('7')">7</button>
-      <button class="pin-key" onclick="pinInput('8')">8</button>
-      <button class="pin-key" onclick="pinInput('9')">9</button>
-      <button class="pin-key empty"></button>
-      <button class="pin-key" onclick="pinInput('0')">0</button>
-      <button class="pin-key" onclick="pinBackspace()">⌫</button>
+      <button class="pin-key" data-digit="1">1</button>
+      <button class="pin-key" data-digit="2">2</button>
+      <button class="pin-key" data-digit="3">3</button>
+      <button class="pin-key" data-digit="4">4</button>
+      <button class="pin-key" data-digit="5">5</button>
+      <button class="pin-key" data-digit="6">6</button>
+      <button class="pin-key" data-digit="7">7</button>
+      <button class="pin-key" data-digit="8">8</button>
+      <button class="pin-key" data-digit="9">9</button>
+      <button class="pin-key pin-key-empty"></button>
+      <button class="pin-key" data-digit="0">0</button>
+      <button class="pin-key pin-key-back" id="pin-back">⌫</button>
     </div>
   </div>
 </div>
+
+
+
+
 
 <!-- BIOMETRIC -->
 <div class="view" id="view-biometric">
@@ -586,6 +927,9 @@ let pinMode = 'setup';
 let pinStage = 'first';
 let firstPin = '';
 
+let verifyCodeCtl = null;
+let resetCodeCtl = null;
+
 // ==================== VIEW ROUTER ====================
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -654,7 +998,10 @@ async function api(endpoint, method = 'GET', data = null, retry = true) {
         if (k) msg = Array.isArray(json[k]) ? json[k][0] : json[k];
       }
     }
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = res.status;
+    err.json = json;
+    throw err;
   }
   return json;
 }
@@ -712,6 +1059,49 @@ function routeToNextStep(data) {
   else loadHome();
 }
 
+// ==================== CODE INPUT UX ====================
+function setupCodeInputs(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return null;
+  const inputs = container.querySelectorAll('.code-input');
+
+  inputs.forEach((inp, idx) => {
+    inp.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      if (val.length > 1) {
+        const chars = val.split('');
+        chars.forEach((c, i) => {
+          if (inputs[idx + i]) { inputs[idx + i].value = c; inputs[idx + i].classList.add('filled'); }
+        });
+        const next = inputs[Math.min(idx + chars.length, inputs.length - 1)];
+        next.focus();
+      } else {
+        e.target.value = val;
+        e.target.classList.toggle('filled', !!val);
+        if (val && idx < inputs.length - 1) inputs[idx + 1].focus();
+      }
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+        inputs[idx - 1].focus();
+      }
+    });
+    inp.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      const chars = paste.split('').slice(0, inputs.length);
+      chars.forEach((c, i) => { if (inputs[i]) { inputs[i].value = c; inputs[i].classList.add('filled'); }});
+      inputs[Math.min(chars.length, inputs.length - 1)].focus();
+    });
+  });
+
+  return {
+    getValue: () => Array.from(inputs).map(i => i.value).join(''),
+    clear: () => inputs.forEach(i => { i.value = ''; i.classList.remove('filled','error'); }),
+    markError: () => inputs.forEach(i => { i.classList.add('error'); setTimeout(() => i.classList.remove('error'), 600); })
+  };
+}
+
 // ==================== SIGNUP ====================
 async function handleSignup(e) {
   e.preventDefault();
@@ -724,14 +1114,53 @@ async function handleSignup(e) {
       password: document.getElementById('signup-password').value,
       password2: document.getElementById('signup-password').value
     });
-    saveTokens(result.tokens);
     userEmail = email; userName = name;
     localStorage.setItem('arena_email', email);
     localStorage.setItem('arena_name', name);
-    showMsg('signup', '✅ Account created!', 'success');
-    setTimeout(() => routeToNextStep(result), 700);
-  } catch (err) { showMsg('signup', err.message, 'error'); }
+    showMsg('signup', '✅ Code sent to your email!', 'success');
+
+    setTimeout(() => {
+      const display = document.getElementById('verify-email-display');
+      if (display) display.textContent = email;
+      if (!verifyCodeCtl) verifyCodeCtl = setupCodeInputs('code-input-grid');
+      if (verifyCodeCtl) verifyCodeCtl.clear();
+      const firstInput = document.querySelector('#code-input-grid .code-input');
+      if (firstInput) firstInput.focus();
+      showView('view-verify');
+    }, 800);
+  } catch (err) {
+    showMsg('signup', err.message, 'error');
+  }
   setLoading('signup-btn', false);
+}
+
+// ==================== VERIFY EMAIL ====================
+async function handleVerifyEmail(e) {
+  e.preventDefault();
+  const code = verifyCodeCtl ? verifyCodeCtl.getValue() : '';
+  if (code.length !== 6) { showMsg('verify', 'Enter all 6 digits', 'error'); return; }
+
+  setLoading('verify-btn', true, 'Verifying...');
+  try {
+    const result = await api('/verify-email/', 'POST', { email: userEmail, code });
+    saveTokens(result.tokens);
+    saveSetupState(result);
+    showMsg('verify', '✅ Email verified!', 'success');
+    setTimeout(() => routeToNextStep(result), 700);
+  } catch (err) {
+    if (verifyCodeCtl) verifyCodeCtl.markError();
+    showMsg('verify', '❌ ' + err.message, 'error');
+  }
+  setLoading('verify-btn', false);
+}
+
+async function handleResendCode() {
+  try {
+    await api('/resend-code/', 'POST', { email: userEmail });
+    showMsg('verify', '📧 New code sent!', 'success');
+  } catch (err) {
+    showMsg('verify', err.message, 'error');
+  }
 }
 
 // ==================== LOGIN ====================
@@ -752,27 +1181,72 @@ async function handleLogin(e) {
     }
     showMsg('login', '✅ Welcome back!', 'success');
     setTimeout(() => routeToNextStep(result), 600);
-  } catch (err) { showMsg('login', err.message, 'error'); }
+  } catch (err) {
+    // Unverified email → route to verification screen
+    if (err.json && err.json.requires_verification) {
+      userEmail = email;
+      showMsg('login', '📧 Email not verified. Code sent!', 'error');
+      setTimeout(() => {
+        const display = document.getElementById('verify-email-display');
+        if (display) display.textContent = email;
+        if (!verifyCodeCtl) verifyCodeCtl = setupCodeInputs('code-input-grid');
+        if (verifyCodeCtl) verifyCodeCtl.clear();
+        showView('view-verify');
+      }, 1000);
+    } else {
+      showMsg('login', err.message, 'error');
+    }
+  }
   setLoading('login-btn', false);
 }
 
 // ==================== PIN ====================
+const PIN_KEYPAD = document.querySelector('.pin-keypad');
+if (PIN_KEYPAD) {
+  PIN_KEYPAD.querySelectorAll('.pin-key[data-digit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.add('pressed');
+      setTimeout(() => btn.classList.remove('pressed'), 150);
+      pinInput(btn.dataset.digit);
+      if (navigator.vibrate) navigator.vibrate(10);
+    });
+  });
+  const backBtn = document.getElementById('pin-back');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      backBtn.classList.add('pressed');
+      setTimeout(() => backBtn.classList.remove('pressed'), 150);
+      pinBackspace();
+      if (navigator.vibrate) navigator.vibrate(8);
+    });
+  }
+}
+
 function startPinSetup() {
   pinMode = 'setup'; pinStage = 'first'; currentPin = ''; firstPin = '';
-  document.getElementById('pin-title').textContent = 'Create your PIN';
-  document.getElementById('pin-subtitle').textContent = "Enter a 6-digit PIN. You'll use this + fingerprint to log in.";
+  const title = document.getElementById('pin-title');
+  const subtitle = document.getElementById('pin-subtitle');
+  const lockIcon = document.getElementById('pin-lock-icon');
+  if (title) title.textContent = 'Create your PIN';
+  if (subtitle) subtitle.textContent = "Choose a 6-digit PIN to secure your account.";
+  if (lockIcon) { lockIcon.textContent = '🔒'; lockIcon.classList.remove('unlocked'); }
   updatePinDisplay();
   showView('view-pin');
 }
 
 function startPinLogin() {
-  const email = document.getElementById('login-email').value.trim();
+  const emailField = document.getElementById('login-email');
+  const email = emailField ? emailField.value.trim() : '';
   if (!email) { showMsg('login', 'Enter your email first', 'error'); return; }
   userEmail = email;
   localStorage.setItem('arena_email', email);
   pinMode = 'login'; currentPin = ''; firstPin = '';
-  document.getElementById('pin-title').textContent = 'Enter your PIN';
-  document.getElementById('pin-subtitle').textContent = `Enter your 6-digit PIN for ${email}`;
+  const title = document.getElementById('pin-title');
+  const subtitle = document.getElementById('pin-subtitle');
+  const lockIcon = document.getElementById('pin-lock-icon');
+  if (title) title.textContent = 'Welcome back';
+  if (subtitle) subtitle.textContent = `Enter your 6-digit PIN for ${email}`;
+  if (lockIcon) { lockIcon.textContent = '🔓'; lockIcon.classList.add('unlocked'); }
   updatePinDisplay();
   showView('view-pin');
 }
@@ -789,11 +1263,25 @@ function updatePinDisplay() {
   });
 }
 
+function shakePinDisplay() {
+  document.querySelectorAll('#pin-display .pin-dot').forEach(d => {
+    d.classList.add('error');
+    setTimeout(() => d.classList.remove('error'), 500);
+  });
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+
+function successPinDisplay() {
+  document.querySelectorAll('#pin-display .pin-dot').forEach(d => d.classList.add('success'));
+  const lockIcon = document.getElementById('pin-lock-icon');
+  if (lockIcon) lockIcon.textContent = '✅';
+}
+
 function pinInput(digit) {
   if (currentPin.length >= 6) return;
   currentPin += digit;
   updatePinDisplay();
-  if (currentPin.length === 6) setTimeout(submitPin, 200);
+  if (currentPin.length === 6) setTimeout(submitPin, 250);
 }
 
 function pinBackspace() {
@@ -808,31 +1296,49 @@ async function submitPin() {
     if (pinStage === 'first') {
       firstPin = currentPin; currentPin = ''; pinStage = 'confirm';
       updatePinDisplay();
-      document.getElementById('pin-title').textContent = 'Confirm your PIN';
-      document.getElementById('pin-subtitle').textContent = 'Enter the same 6 digits again.';
-      showMsg('pin', 'Now confirm your PIN', 'info');
+      const title = document.getElementById('pin-title');
+      const subtitle = document.getElementById('pin-subtitle');
+      const lockIcon = document.getElementById('pin-lock-icon');
+      if (title) title.textContent = 'Confirm your PIN';
+      if (subtitle) subtitle.textContent = 'Enter the same 6 digits again.';
+      if (lockIcon) lockIcon.textContent = '🔐';
+      showMsg('pin', 'Re-enter your PIN to confirm', 'info');
       return;
     }
     if (firstPin !== currentPin) {
-      firstPin = ''; currentPin = ''; pinStage = 'first';
-      updatePinDisplay();
-      document.getElementById('pin-title').textContent = 'Create your PIN';
-      document.getElementById('pin-subtitle').textContent = 'Enter a 6-digit PIN.';
+      shakePinDisplay();
+      setTimeout(() => {
+        firstPin = ''; currentPin = ''; pinStage = 'first';
+        updatePinDisplay();
+        const title = document.getElementById('pin-title');
+        const subtitle = document.getElementById('pin-subtitle');
+        const lockIcon = document.getElementById('pin-lock-icon');
+        if (title) title.textContent = 'Create your PIN';
+        if (subtitle) subtitle.textContent = 'Choose a 6-digit PIN.';
+        if (lockIcon) lockIcon.textContent = '🔒';
+      }, 500);
       showMsg('pin', '❌ PINs did not match. Try again.', 'error');
       return;
     }
     try {
       await api('/pin/set/', 'POST', { pin: currentPin });
+      successPinDisplay();
       hasPin = true;
       localStorage.setItem('arena_has_pin', 'true');
-      currentPin = ''; firstPin = '';
-      updatePinDisplay();
       showMsg('pin', '✅ PIN saved!', 'success');
-      setTimeout(() => showView('view-biometric'), 800);
+      setTimeout(() => {
+        currentPin = ''; firstPin = '';
+        updatePinDisplay();
+        document.querySelectorAll('#pin-display .pin-dot').forEach(d => d.classList.remove('success'));
+        showView('view-biometric');
+      }, 1200);
     } catch (err) {
+      shakePinDisplay();
       showMsg('pin', '❌ Could not save PIN: ' + err.message, 'error');
-      currentPin = ''; firstPin = ''; pinStage = 'first';
-      updatePinDisplay();
+      setTimeout(() => {
+        currentPin = ''; firstPin = ''; pinStage = 'first';
+        updatePinDisplay();
+      }, 500);
     }
     return;
   }
@@ -840,15 +1346,19 @@ async function submitPin() {
   // login mode
   try {
     const result = await api('/pin/login/', 'POST', { email: userEmail, pin: currentPin });
+    successPinDisplay();
     saveTokens(result.tokens);
     saveSetupState(result);
-    currentPin = '';
-    updatePinDisplay();
     showMsg('login', '✅ PIN verified!', 'success');
-    setTimeout(() => routeToNextStep(result), 500);
+    setTimeout(() => {
+      currentPin = '';
+      updatePinDisplay();
+      document.querySelectorAll('#pin-display .pin-dot').forEach(d => d.classList.remove('success'));
+      routeToNextStep(result);
+    }, 700);
   } catch (err) {
-    currentPin = '';
-    updatePinDisplay();
+    shakePinDisplay();
+    setTimeout(() => { currentPin = ''; updatePinDisplay(); }, 500);
     showMsg('pin', '❌ ' + err.message, 'error');
   }
 }
@@ -876,23 +1386,20 @@ async function setupPlatformBiometric() {
   }
 
   setLoading('bio-setup-btn', true, 'Waiting for fingerprint...');
-  document.getElementById('bio-status').textContent = 'Touch the fingerprint sensor on your phone...';
+  const statusEl = document.getElementById('bio-status');
+  if (statusEl) statusEl.textContent = 'Touch the fingerprint sensor on your phone...';
 
   try {
     const email = userEmail || 'user@voddic.com';
     const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email));
     const userId = new Uint8Array(hashBuf).slice(0, 16);
 
-    // Delete any existing credential for this email in localStorage first
     localStorage.removeItem('arena_credential_id');
 
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: {
-          name: RP_NAME,
-          id: RP_ID
-        },
+        rp: { name: RP_NAME, id: RP_ID },
         user: {
           id: userId,
           name: email,
@@ -911,22 +1418,15 @@ async function setupPlatformBiometric() {
         excludeCredentials: [],
         timeout: 90000,
         attestation: 'none',
-        extensions: {
-          credProps: true,
-          uvm: true
-        }
+        extensions: { credProps: true, uvm: true }
       }
     });
 
     const rawId = bufferToBase64url(credential.rawId);
     const extResults = credential.getClientExtensionResults();
 
-    console.log('✅ Credential created');
-    console.log('   rawId:', rawId.slice(0, 50));
-    console.log('   credProps:', extResults.credProps);
-    console.log('   uvm:', extResults.uvm);
+    console.log('✅ Credential created:', rawId.slice(0, 50));
 
-    // Save to backend
     const response = await api('/webauthn/register/', 'POST', {
       credential_id: rawId,
       public_key: 'platform_authenticator',
@@ -936,16 +1436,17 @@ async function setupPlatformBiometric() {
 
     console.log('✅ Saved to backend:', response);
 
-    // Save to localStorage for later fingerprint LOGIN
     localStorage.setItem('arena_credential_id', rawId);
     hasBiometric = true;
     localStorage.setItem('arena_has_bio', 'true');
 
     const btn = document.getElementById('bio-setup-btn');
-    btn.textContent = '✅ Fingerprint Set Up!';
-    btn.classList.add('success');
-    btn.disabled = true;
-    document.getElementById('bio-status').textContent = '';
+    if (btn) {
+      btn.textContent = '✅ Fingerprint Set Up!';
+      btn.classList.add('success');
+      btn.disabled = true;
+    }
+    if (statusEl) statusEl.textContent = '';
     showMsg('bio', '✅ Fingerprint registered! Redirecting...', 'success');
     setTimeout(() => loadHome(), 1400);
     return true;
@@ -954,9 +1455,9 @@ async function setupPlatformBiometric() {
     console.error('❌ Biometric error:', e.name, e.message);
     let msg = 'Setup failed. ';
     if (e.name === 'NotAllowedError') {
-      msg = 'Fingerprint cancelled or a saved passkey exists for this site. Delete it from phone Settings → Passwords, then try again.';
+      msg = 'Fingerprint cancelled or a saved passkey exists. Delete it from phone Settings → Passwords, then try again.';
     } else if (e.name === 'InvalidStateError') {
-      msg = 'This device already has a fingerprint for this account. Try logging in instead.';
+      msg = 'This device already has a fingerprint. Try logging in instead.';
     } else if (e.name === 'NotSupportedError') {
       msg = 'Device does not support fingerprint authentication.';
     } else if (e.name === 'AbortError') {
@@ -966,10 +1467,11 @@ async function setupPlatformBiometric() {
     } else {
       msg += (e.message || e.name);
     }
-    document.getElementById('bio-status').textContent = msg;
+    if (statusEl) statusEl.textContent = msg;
     showMsg('bio', '❌ ' + msg, 'error');
     setLoading('bio-setup-btn', false);
-    document.getElementById('bio-setup-btn').textContent = '👆 Try Again';
+    const btn = document.getElementById('bio-setup-btn');
+    if (btn) btn.textContent = '👆 Try Again';
     return false;
   }
 }
@@ -981,21 +1483,18 @@ async function handleBiometricLogin() {
     return;
   }
 
-  // Get the credential ID from localStorage
   const credId = localStorage.getItem('arena_credential_id');
   if (!credId) {
     showMsg('login', 'No fingerprint registered on this device. Log in with password first, then set up fingerprint.', 'error');
     return;
   }
 
-  console.log('🔐 Attempting biometric login with credential:', credId.slice(0, 50));
+  console.log('🔐 Attempting biometric login:', credId.slice(0, 50));
 
   try {
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        // ✅ CRITICAL — pass the exact credential ID + transports
-        // This forces Chrome to use the DEVICE sensor, not Google Passkey vault
         allowCredentials: [{
           id: base64urlToBuffer(credId),
           type: 'public-key',
@@ -1013,15 +1512,12 @@ async function handleBiometricLogin() {
     }
 
     const rawId = bufferToBase64url(assertion.rawId);
-    console.log('✅ Assertion credential ID:', rawId.slice(0, 50));
+    console.log('✅ Assertion ID:', rawId.slice(0, 50));
 
-    const result = await api('/webauthn/login/', 'POST', {
-      credential_id: rawId
-    });
+    const result = await api('/webauthn/login/', 'POST', { credential_id: rawId });
 
     saveTokens(result.tokens);
     saveSetupState(result);
-    // Keep localStorage credential in sync
     localStorage.setItem('arena_credential_id', rawId);
 
     showMsg('login', '✅ Fingerprint verified!', 'success');
@@ -1031,7 +1527,7 @@ async function handleBiometricLogin() {
     console.error('❌ Biometric login error:', e.name, e.message);
     let msg = 'Fingerprint not recognized.';
     if (e.name === 'NotAllowedError') {
-      msg = 'Fingerprint cancelled or no credentials found on this device. Try logging in with password, then re-register fingerprint.';
+      msg = 'Fingerprint cancelled or no credentials found. Try password login, then re-register fingerprint.';
     } else if (e.name === 'InvalidStateError') {
       msg = 'The saved fingerprint no longer exists on this device. Log in with password first.';
     } else if (e.name === 'AbortError') {
@@ -1042,13 +1538,54 @@ async function handleBiometricLogin() {
 }
 
 // ==================== PASSWORD RESET ====================
-async function handlePasswordReset(e) {
+async function handlePasswordResetRequest(e) {
   e.preventDefault();
-  const email = document.getElementById('reset-email').value;
+  const email = document.getElementById('reset-email').value.trim();
+  setLoading('reset-btn', true, 'Sending...');
   try {
     await api('/password-reset/', 'POST', { email });
-    showMsg('reset', 'Reset link sent! Check your inbox.', 'success');
-  } catch { showMsg('reset', 'Could not send reset link', 'error'); }
+    userEmail = email;
+    localStorage.setItem('arena_email', email);
+    showMsg('reset', '📧 Code sent! Check your email.', 'success');
+    setTimeout(() => {
+      const display = document.getElementById('reset-email-display');
+      if (display) display.textContent = email;
+      if (!resetCodeCtl) resetCodeCtl = setupCodeInputs('reset-code-grid');
+      if (resetCodeCtl) resetCodeCtl.clear();
+      const firstInput = document.querySelector('#reset-code-grid .code-input');
+      if (firstInput) firstInput.focus();
+      showView('view-reset-verify');
+    }, 800);
+  } catch (err) {
+    showMsg('reset', err.message, 'error');
+  }
+  setLoading('reset-btn', false);
+}
+
+async function handlePasswordResetVerify(e) {
+  e.preventDefault();
+  const code = resetCodeCtl ? resetCodeCtl.getValue() : '';
+  const pass = document.getElementById('reset-new-pass').value;
+  const pass2 = document.getElementById('reset-new-pass2').value;
+
+  if (code.length !== 6) { showMsg('reset-verify', 'Enter all 6 digits', 'error'); return; }
+  if (pass !== pass2) { showMsg('reset-verify', 'Passwords do not match', 'error'); return; }
+
+  setLoading('reset-verify-btn', true, 'Resetting...');
+  try {
+    await api('/password-reset/verify/', 'POST', {
+      email: userEmail,
+      code,
+      new_password: pass,
+      new_password2: pass2
+    });
+    showMsg('reset-verify', '✅ Password reset! Redirecting...', 'success');
+    setTimeout(() => showView('view-login'), 1200);
+  } catch (err) {
+    if (resetCodeCtl) resetCodeCtl.markError();
+    showMsg('reset-verify', '❌ ' + err.message, 'error');
+  }
+  setLoading('reset-verify-btn', false);
 }
 
 // ==================== GOOGLE ====================
@@ -1069,7 +1606,8 @@ async function loadHome() {
     if (!hasPin) { startPinSetup(); return; }
     if (!hasBiometric) { showView('view-biometric'); return; }
 
-    document.getElementById('wallet-bal').textContent = '₦8,200';
+    const balEl = document.getElementById('wallet-bal');
+    if (balEl) balEl.textContent = '₦8,200';
     showView('view-home');
 
   } catch (err) {
@@ -1120,8 +1658,6 @@ async function verifyFingerprintForGame() {
 
 // ==================== LOGOUT ====================
 function handleLogout() {
-  // NOTE: We do NOT clear arena_credential_id here — keep it so biometric
-  // login works after logout. Only clear the session tokens.
   localStorage.removeItem('arena_access');
   localStorage.removeItem('arena_refresh');
   // Keep: arena_credential_id, arena_email, arena_has_pin, arena_has_bio, arena_name
@@ -1134,7 +1670,7 @@ function handleLogout() {
   showView('view-landing');
 }
 
-// ==================== INIT ====================
+// ==================== UI INIT ====================
 document.querySelectorAll('.toggle-eye').forEach(btn => {
   btn.addEventListener('click', () => {
     const input = document.getElementById(btn.dataset.target);
@@ -1160,12 +1696,13 @@ function initGlobe() {
   if (typeof THREE === 'undefined') return;
   globeInitialized = true;
 
-  function goToStage(){ window.open(GAME_URL, '_blank', 'noopener'); }
-  document.getElementById('joinBtn').addEventListener('click', () => {
+  const joinBtn = document.getElementById('joinBtn');
+  const globeStageEl = document.getElementById('globeStage');
+  if (joinBtn) joinBtn.addEventListener('click', () => {
     if (!hasBiometric) { showView('view-biometric'); return; }
     verifyFingerprintForGame();
   });
-  document.getElementById('globeStage').addEventListener('click', () => {
+  if (globeStageEl) globeStageEl.addEventListener('click', () => {
     if (!hasBiometric) { showView('view-biometric'); return; }
     verifyFingerprintForGame();
   });
@@ -1279,7 +1816,7 @@ function initGlobe() {
   animate();
 }
 
-// ==================== AUTO-RESTORE ====================
+// ==================== AUTO-RESTORE (must be last) ====================
 (async function autoRestore() {
   if (!accessToken) return;
   try {
@@ -1291,7 +1828,6 @@ function initGlobe() {
     routeToNextStep(profile);
   } catch (err) {
     console.log('Session restore failed:', err);
-    // Don't force logout — just clear tokens but keep biometric data
     localStorage.removeItem('arena_access');
     localStorage.removeItem('arena_refresh');
     accessToken = null;
