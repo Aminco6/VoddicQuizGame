@@ -1588,56 +1588,158 @@ async function handleBiometricLogin() {
   }
 }
 
-// ==================== PASSWORD RESET ====================
-async function handlePasswordResetRequest(e) {
-  e.preventDefault();
-  const email = document.getElementById('reset-email').value.trim();
-  setLoading('reset-btn', true, 'Sending...');
-  try {
-    await api('/password-reset/', 'POST', { email });
-    userEmail = email;
-    localStorage.setItem('arena_email', email);
-    showMsg('reset', '📧 Code sent! Check your email.', 'success');
-    setTimeout(() => {
-      const display = document.getElementById('reset-email-display');
-      if (display) display.textContent = email;
-      if (!resetCodeCtl) resetCodeCtl = setupCodeInputs('reset-code-grid');
-      if (resetCodeCtl) resetCodeCtl.clear();
-      const firstInput = document.querySelector('#reset-code-grid .code-input');
-      if (firstInput) firstInput.focus();
-      showView('view-reset-verify');
-    }, 800);
-  } catch (err) {
-    showMsg('reset', err.message, 'error');
-  }
-  setLoading('reset-btn', false);
+// ==================== PASSWORD RESET (3-STEP) ====================
+let resetEmail = '';
+let resetToken = '';
+
+function resetStep(step) {
+  document.getElementById('reset-step-email').style.display = 'none';
+  document.getElementById('reset-step-code').style.display = 'none';
+  document.getElementById('reset-step-newpass').style.display = 'none';
+  if (step === 'email') document.getElementById('reset-step-email').style.display = 'block';
+  if (step === 'code') document.getElementById('reset-step-code').style.display = 'block';
+  if (step === 'newpass') document.getElementById('reset-step-newpass').style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
-async function handlePasswordResetVerify(e) {
-  e.preventDefault();
-  const code = resetCodeCtl ? resetCodeCtl.getValue() : '';
-  const pass = document.getElementById('reset-new-pass').value;
-  const pass2 = document.getElementById('reset-new-pass2').value;
+function resetGoBack() {
+  const codeVisible = document.getElementById('reset-step-code').style.display === 'block';
+  const newpassVisible = document.getElementById('reset-step-newpass').style.display === 'block';
+  if (newpassVisible) resetStep('code');
+  else if (codeVisible) resetStep('email');
+  else showView('view-login');
+}
 
-  if (code.length !== 6) { showMsg('reset-verify', 'Enter all 6 digits', 'error'); return; }
-  if (pass !== pass2) { showMsg('reset-verify', 'Passwords do not match', 'error'); return; }
+async function handleResetSend(isResend = false) {
+  const emailInput = document.getElementById('reset-email');
+  const email = resetEmail || (emailInput ? emailInput.value.trim() : '');
 
-  setLoading('reset-verify-btn', true, 'Resetting...');
+  console.log('📧 Sending reset code to:', email);
+
+  if (!email) {
+    showMsg(isResend ? 'reset-verify' : 'reset', 'Please enter your email', 'error');
+    return;
+  }
+
+  resetEmail = email;
+  const emailDisplay = document.getElementById('reset-code-email-display');
+  if (emailDisplay) emailDisplay.textContent = email;
+
+  const btnId = isResend ? 'reset-verify-btn' : 'reset-send-btn';
+  const btn = document.getElementById(btnId);
+  const origText = btn ? btn.textContent : 'Send Code';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+  }
+
   try {
-    await api('/password-reset/verify/', 'POST', {
-      email: userEmail,
-      code,
-      new_password: pass,
-      new_password2: pass2
-    });
-    showMsg('reset-verify', '✅ Password reset! Redirecting...', 'success');
-    setTimeout(() => showView('view-login'), 1200);
+    const res = await api('/password-reset/', 'POST', { email });
+    console.log('✅ Reset code sent:', res);
+    if (!isResend) resetStep('code');
+    showMsg('reset-verify', '✅ Code sent! Check your email (or server console).', 'success');
+    setTimeout(() => {
+      const codeInput = document.getElementById('reset-code');
+      if (codeInput) codeInput.focus();
+    }, 200);
   } catch (err) {
-    if (resetCodeCtl) resetCodeCtl.markError();
+    console.error('❌ Reset send error:', err);
+    showMsg(isResend ? 'reset-verify' : 'reset', '❌ ' + err.message, 'error');
+  }
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+async function handleResetVerify() {
+  const codeInput = document.getElementById('reset-code');
+  const code = codeInput ? codeInput.value.trim() : '';
+
+  if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+    showMsg('reset-verify', 'Enter the 6-digit code', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('reset-verify-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Verifying...';
+  }
+
+  try {
+    const result = await api('/password-reset/verify/', 'POST', {
+      email: resetEmail,
+      code: code
+    });
+    resetToken = result.reset_token;
+    showMsg('reset-verify', '✅ Code verified!', 'success');
+    setTimeout(() => {
+      resetStep('newpass');
+      const newPassInput = document.getElementById('reset-newpass');
+      if (newPassInput) newPassInput.focus();
+    }, 500);
+  } catch (err) {
     showMsg('reset-verify', '❌ ' + err.message, 'error');
   }
-  setLoading('reset-verify-btn', false);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Verify Code';
+  }
 }
+
+async function handleResetConfirm() {
+  const pw1 = document.getElementById('reset-newpass').value;
+  const pw2 = document.getElementById('reset-newpass2').value;
+
+  if (pw1.length < 8) {
+    showMsg('reset-confirm', 'Password must be at least 8 characters', 'error');
+    return;
+  }
+  if (pw1 !== pw2) {
+    showMsg('reset-confirm', 'Passwords do not match', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('reset-confirm-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Resetting...';
+  }
+
+  try {
+    const result = await api('/password-reset/confirm/', 'POST', {
+      email: resetEmail,
+      reset_token: resetToken,
+      password: pw1,
+      password2: pw2
+    });
+
+    if (result.tokens) {
+      saveTokens(result.tokens);
+      saveSetupState(result);
+      userEmail = resetEmail;
+      localStorage.setItem('arena_email', resetEmail);
+    }
+
+    showMsg('reset-confirm', '✅ Password reset! Logging you in...', 'success');
+    setTimeout(() => {
+      if (result.tokens) {
+        routeToNextStep(result);
+      } else {
+        showView('view-login');
+      }
+    }, 900);
+  } catch (err) {
+    showMsg('reset-confirm', '❌ ' + err.message, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Reset Password';
+    }
+  }
+}
+
+
 
 // ==================== GOOGLE ====================
 async function handleGoogleAuth() {
