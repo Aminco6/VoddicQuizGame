@@ -704,28 +704,79 @@
   </div>
 </div>
 
-<!-- RESET -->
+<!-- ============ RESET PASSWORD (3-step) ============ -->
 <div class="view" id="view-reset">
   <div class="auth-shell">
-    <div class="top-row"><button class="back-btn" onclick="showView('view-login')">←</button></div>
-    <div class="reset-icon-wrap">🔑</div>
-    <div class="heading-block" style="margin-top:14px;">
-      <div class="heading">Reset your password</div>
-      <div class="subheading">Enter your email and we'll send you a reset link.</div>
+    <div class="top-row">
+      <button class="back-btn" onclick="resetGoBack()">←</button>
     </div>
-    <form class="form" onsubmit="handlePasswordReset(event)">
-      <div class="field"><label for="reset-email">Email address</label>
-        <div class="field-input-wrap"><span class="field-icon">📧</span>
-          <input id="reset-email" type="email" placeholder="you@example.com" required autocomplete="email">
-        </div>
+
+    <!-- STEP 1: Enter email -->
+    <div id="reset-step-email">
+      <div class="reset-icon-wrap">🔑</div>
+      <div class="heading-block" style="margin-top:14px;">
+        <div class="heading">Reset password</div>
+        <div class="subheading">Enter your email and we'll send you a 6-digit code.</div>
       </div>
-      <div class="message" id="reset-msg"></div>
-      <button type="submit" class="primary-btn">Send Reset Link</button>
-      <div class="switch-line">Remembered your password? <button type="button" onclick="showView('view-login')">Log In</button></div>
-    </form>
+      <div class="form">
+        <div class="field"><label for="reset-email">Email address</label>
+          <div class="field-input-wrap"><span class="field-icon">📧</span>
+            <input id="reset-email" type="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="message" id="reset-msg"></div>
+        <button type="button" class="primary-btn" id="reset-send-btn" onclick="handleResetSend()">Send Code</button>
+        <div class="switch-line">Remembered your password? <button type="button" onclick="showView('view-login')">Log In</button></div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Enter code -->
+    <div id="reset-step-code" style="display:none;">
+      <div class="reset-icon-wrap">📬</div>
+      <div class="heading-block" style="margin-top:14px;">
+        <div class="heading">Enter the code</div>
+        <div class="subheading">We sent a 6-digit code to <b id="reset-code-email-display" style="color:var(--gold-light);"></b></div>
+      </div>
+      <div class="form">
+        <div class="field"><label for="reset-code">6-digit code</label>
+          <div class="field-input-wrap"><span class="field-icon">🔢</span>
+            <input id="reset-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code"
+              style="text-align:center; font-size:22px; letter-spacing:8px; font-weight:700;">
+          </div>
+        </div>
+        <div class="message" id="reset-verify-msg"></div>
+        <button type="button" class="primary-btn" id="reset-verify-btn" onclick="handleResetVerify()">Verify Code</button>
+        <button type="button" class="secondary-btn" onclick="resetStep('email')">← Change email</button>
+        <button type="button" class="link-btn" style="margin:12px auto 0; display:block; text-align:center;" onclick="handleResetSend(true)">Resend code</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: New password -->
+    <div id="reset-step-newpass" style="display:none;">
+      <div class="reset-icon-wrap">🔐</div>
+      <div class="heading-block" style="margin-top:14px;">
+        <div class="heading">Create new password</div>
+        <div class="subheading">Choose a strong password you'll remember.</div>
+      </div>
+      <div class="form">
+        <div class="field"><label for="reset-newpass">New password</label>
+          <div class="field-input-wrap"><span class="field-icon">🔒</span>
+            <input id="reset-newpass" type="password" placeholder="Min 8 characters" minlength="8" autocomplete="new-password">
+            <button type="button" class="toggle-eye" data-target="reset-newpass">👁</button>
+          </div>
+        </div>
+        <div class="field"><label for="reset-newpass2">Confirm password</label>
+          <div class="field-input-wrap"><span class="field-icon">🔒</span>
+            <input id="reset-newpass2" type="password" placeholder="Repeat password" minlength="8" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="message" id="reset-confirm-msg"></div>
+        <button type="button" class="primary-btn" id="reset-confirm-btn" onclick="handleResetConfirm()">Reset Password</button>
+      </div>
+    </div>
+
   </div>
 </div>
-
 
 
 
