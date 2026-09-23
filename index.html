@@ -409,6 +409,11 @@
     font-size:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
+
+
+
+
+  .modal-card input:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(232,185,76,0.18); }
 </style>
 </head>
 <body>
@@ -667,21 +672,47 @@
 
 </div><!-- /#root -->
 
+
+
+
+
+
+
 <!-- Wallet Modal -->
 <div class="modal-backdrop" id="walletModal" onclick="if(event.target===this)closeWallet()">
   <div class="modal-card">
     <h2>Wallet</h2>
     <div class="sub" id="walletEmail">—</div>
     <div class="bal-big"><span class="cur">₦</span><span id="walletModalBal">0</span></div>
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Fund wallet</div>
+
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Quick top-up</div>
     <div class="amount-grid">
-      <button onclick="topup(500)">₦500</button>
-      <button onclick="topup(1000)">₦1k</button>
-      <button onclick="topup(5000)">₦5k</button>
+      <button onclick="startTopup(500)">₦500</button>
+      <button onclick="startTopup(1000)">₦1,000</button>
+      <button onclick="startTopup(5000)">₦5,000</button>
     </div>
+
+    <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">Custom amount (min ₦100)</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input id="customTopupAmount" type="number" min="100" step="50" placeholder="1000"
+        style="flex:1;padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-size:15px;">
+      <button onclick="startTopup(document.getElementById('customTopupAmount').value)"
+        style="padding:12px 18px;border-radius:10px;background:var(--gold);color:#1A1305;font-weight:700;border:none;font-size:14px;cursor:pointer;">
+        Fund
+      </button>
+    </div>
+
+    <div id="topupStatus" style="display:none;font-size:12.5px;padding:10px 12px;border-radius:10px;margin-bottom:10px;"></div>
+
     <button class="modal-close" onclick="closeWallet()">Close</button>
   </div>
 </div>
+
+
+
+
+
+
 
 <!-- Fullscreen Game Player -->
 <div id="gamePlayer">
@@ -1303,6 +1334,129 @@ function closeWallet() {
 function topup(amount) {
   alert('Wallet funding coming soon. Contact support to add ₦' + amount.toLocaleString());
 }
+
+
+
+// ==================== PAYSTACK TOPUP ====================
+let paystackScriptLoaded = false;
+
+async function loadPaystackScript() {
+  if (paystackScriptLoaded) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://js.paystack.co/v1/inline.js';
+    s.onload = () => { paystackScriptLoaded = true; resolve(); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function startTopup(amount) {
+  amount = Number(amount);
+  if (!amount || amount < 100) {
+    showTopupStatus('Minimum top-up is ₦100', 'error');
+    return;
+  }
+  if (amount > 500000) {
+    showTopupStatus('Maximum top-up is ₦500,000', 'error');
+    return;
+  }
+
+  showTopupStatus('Preparing payment…', 'info');
+
+  try {
+    // 1. Ask backend to initialize the transaction
+    const init = await api('/wallet/topup/initiate/', 'POST', { amount });
+
+    // 2. Load Paystack inline script
+    await loadPaystackScript();
+
+    // 3. Get public key from backend
+    const pk = await api('/wallet/paystack/public-key/');
+
+    showTopupStatus('Opening Paystack…', 'info');
+
+    // 4. Open Paystack popup
+    const handler = PaystackPop.setup({
+      key: pk.public_key,
+      email: userEmail,
+      amount: Math.round(amount * 100), // kobo
+      currency: 'NGN',
+      ref: init.reference,
+      metadata: {
+        custom_fields: [
+          { display_name: 'Voddic User', variable_name: 'user', value: userEmail }
+        ]
+      },
+      callback: function(response) {
+        // Payment success — verify server-side
+        showTopupStatus('Verifying payment…', 'info');
+        verifyTopup(response.reference);
+      },
+      onClose: function() {
+        showTopupStatus('Payment window closed.', 'error');
+      }
+    });
+    handler.openIframe();
+  } catch (err) {
+    console.error('Topup error:', err);
+    showTopupStatus(err.message || 'Could not start payment', 'error');
+  }
+}
+
+async function verifyTopup(reference) {
+  try {
+    const res = await api(`/wallet/topup/verify/${reference}/`);
+    if (res.status === 'SUCCESS') {
+      showTopupStatus(`✅ Wallet credited. New balance: ₦${Number(res.balance).toLocaleString()}`, 'success');
+      document.getElementById('walletModalBal').textContent = Number(res.balance).toLocaleString();
+      document.getElementById('wallet-bal').textContent = '₦' + Number(res.balance).toLocaleString();
+      document.getElementById('wallet-bal-2').textContent = '₦' + Number(res.balance).toLocaleString();
+    } else {
+      showTopupStatus('Payment pending: ' + (res.message || res.status), 'info');
+      // Poll a few times
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const r = await api(`/wallet/topup/verify/${reference}/`);
+          if (r.status === 'SUCCESS') {
+            clearInterval(poll);
+            showTopupStatus(`✅ Wallet credited: ₦${Number(r.balance).toLocaleString()}`, 'success');
+            document.getElementById('walletModalBal').textContent = Number(r.balance).toLocaleString();
+            document.getElementById('wallet-bal').textContent = '₦' + Number(r.balance).toLocaleString();
+            document.getElementById('wallet-bal-2').textContent = '₦' + Number(r.balance).toLocaleString();
+          }
+        } catch (e) {}
+        if (attempts > 10) clearInterval(poll);
+      }, 3000);
+    }
+  } catch (err) {
+    showTopupStatus('Verification failed: ' + err.message, 'error');
+  }
+}
+
+function showTopupStatus(msg, type) {
+  const el = document.getElementById('topupStatus');
+  el.style.display = 'block';
+  el.textContent = msg;
+  if (type === 'success') {
+    el.style.background = 'rgba(63,199,176,0.15)';
+    el.style.color = '#7fe8d5';
+    el.style.border = '1px solid rgba(63,199,176,0.3)';
+  } else if (type === 'error') {
+    el.style.background = 'rgba(225,85,84,0.1)';
+    el.style.color = '#ff8f8e';
+    el.style.border = '1px solid rgba(225,85,84,0.3)';
+  } else {
+    el.style.background = 'rgba(107,63,214,0.15)';
+    el.style.color = '#c9bff2';
+    el.style.border = '1px solid rgba(155,107,240,0.3)';
+  }
+}
+
+
+
 
 // ==================== LOGOUT ====================
 function handleLogout() {
