@@ -141,7 +141,16 @@ function beginGame(session) {
 
   setupLanes();
 
-  // Schedule the initial windows
+  // ===== CRITICAL: compute time offset between browser and server =====
+  // server_start_ms = how long the server has been running when it sent this response
+  // Set localStartTime such that (performance.now() - localStartTime) ≈ server time
+  const serverStartMs = session.server_start_ms || 0;
+  startTime = performance.now() - serverStartMs;
+  lastFrame = performance.now();
+
+  console.log(`⏱️ Clock sync: server_start_ms=${serverStartMs}ms, local startTime offset set`);
+
+  // Schedule initial windows
   if (session.windows && session.windows.length > 0) {
     for (const w of session.windows) {
       scheduleWindow(w);
@@ -151,14 +160,15 @@ function beginGame(session) {
   }
 
   running = true;
-  startTime = performance.now();
-  lastFrame = startTime;
   requestAnimationFrame(loop);
 
   flushTimer = setInterval(flushEvents, 1200);
-  pollTimer = setInterval(pollWindows, 5000);
+  pollTimer = setInterval(pollWindows, 3000);
   heartbeatTimer = setInterval(sendHeartbeat, 5000);
 }
+
+
+
 
 // ==================== LANES ====================
 function setupLanes() {
@@ -366,8 +376,7 @@ async function flushEvents() {
 async function pollWindows() {
   if (!sessionToken || !running) return;
   try {
-    const elapsedMs = Math.round(performance.now() - startTime);
-    const res = await voddicFetch(`/game/session/${sessionToken}/windows/?from_ms=${elapsedMs}`);
+    const res = await voddicFetch(`/game/session/${sessionToken}/windows/?from_ms=0`);
     if (res.windows && res.windows.length > 0) {
       let newCount = 0;
       for (const w of res.windows) {
@@ -377,21 +386,34 @@ async function pollWindows() {
           newCount++;
         }
       }
-      if (newCount > 0) console.log(`📦 Loaded ${newCount} new windows`);
+      if (newCount > 0) console.log(`📦 Loaded ${newCount} new windows (through #${lastWindowIndex})`);
     }
   } catch (e) {
     console.warn('Poll failed:', e);
   }
 }
 
+
+
+
 // ==================== HEARTBEAT ====================
 async function sendHeartbeat() {
   if (!sessionToken || !running) return;
   try {
-    await voddicFetch('/game/heartbeat/', {
+    const clientMs = Math.round(performance.now() - startTime);
+    const res = await voddicFetch('/game/heartbeat/', {
       method: 'POST',
-      body: JSON.stringify({ session_token: sessionToken })
+      body: JSON.stringify({ session_token: sessionToken, elapsed_ms: clientMs })
     });
+    // Compare against server
+    if (res.server_time_ms !== undefined) {
+      const drift = res.server_time_ms - clientMs;
+      if (Math.abs(drift) > 1000) {
+        console.warn(`⏱️ Clock drift detected: ${drift}ms — resyncing`);
+        // Resync
+        startTime = performance.now() - res.server_time_ms;
+      }
+    }
   } catch (e) {
     showConnStatus('● reconnecting…');
   }
