@@ -1113,24 +1113,25 @@ function renderGameGrid(games) {
     </div>
   `).join('');
 }
-
-// ==================== STAGE VIEW ====================
 async function openStage(stageSlug) {
-  console.log('🎯 openStage called with slug:', stageSlug);
+  console.log('🎯 openStage called with:', stageSlug);
   if (!stageSlug || stageSlug === 'undefined' || stageSlug === 'null') {
-    alert('Invalid stage slug: ' + stageSlug);
+    alert('Invalid stage slug');
     return;
   }
-  currentStage = stageSlug;
+  window.currentStage = stageSlug;  // global
   showView('view-stage');
   try {
     const data = await api(`/contest/stage/${stageSlug}/`);
+    window._currentStageData = data;
     renderStage(data);
   } catch (err) {
-    alert('Could not load stage "' + stageSlug + '": ' + err.message);
+    alert('Could not load stage: ' + err.message);
     showView('view-dashboard');
   }
 }
+
+
 
 function renderStage(data) {
   document.getElementById('stageEyebrow').textContent = `STAGE · ${data.stage.is_live ? 'LIVE' : 'CLOSED'}`;
@@ -1215,31 +1216,35 @@ function formatTime(seconds) {
 // ==================== PLAY GAME (no page reload) ====================
 async function playGame() {
   const data = window._currentStageData;
-  if (!data) { alert('Stage data not loaded. Please refresh.'); return; }
+  if (!data) { alert('Stage not loaded'); return; }
 
-  const stageSlug = currentStage || data.stage.slug;
-  console.log('🎮 Playing stage:', stageSlug);
+  const stageSlug = data.stage.slug || window.currentStage;
+  console.log('🎮 Playing:', stageSlug, 'data.stage.slug=', data.stage.slug, 'window.currentStage=', window.currentStage);
+
+  if (!stageSlug || stageSlug === 'undefined') {
+    alert('Cannot determine stage slug. Refresh and try again.');
+    return;
+  }
 
   const fee = Number(data.contest.entry_fee).toLocaleString();
   if (!confirm(`Pay ₦${fee} to play ${data.stage.game}?`)) return;
 
   try {
     const playResp = await api(`/contest/stage/${stageSlug}/play/`, 'POST');
-    console.log('✅ Play response:', playResp);
-
     document.getElementById('wallet-bal').textContent = '₦' + Number(playResp.wallet_balance).toLocaleString();
     document.getElementById('wallet-bal-2').textContent = '₦' + Number(playResp.wallet_balance).toLocaleString();
-
     launchGameInIframe(playResp.game_slug, data.stage.name, playResp);
   } catch (err) {
     if (err.message.includes('Insufficient')) {
-      alert('Insufficient balance. Fund your wallet.');
+      alert('Insufficient balance. Fund wallet.');
       openWallet();
     } else {
       alert('Could not start: ' + err.message);
     }
   }
 }
+
+
 
 function launchGameInIframe(gameSlug, gameName, playResp) {
   const frame = document.getElementById('gameFrame');
