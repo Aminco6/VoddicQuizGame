@@ -8,6 +8,137 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+
+
+
+<style>
+
+/* Prize tag under podium name */
+.prize-tag{
+  font-size:11px;
+  color:var(--gold);
+  font-weight:800;
+  margin-bottom:8px;
+  font-variant-numeric:tabular-nums;
+}
+.standWrap .pscore{ margin-bottom:4px !important; }
+
+/* View score mini button */
+.rRow .action button.mini.view-btn{
+  background:rgba(63,199,176,0.15);
+  color:var(--teal);
+  border:1px solid var(--teal);
+}
+
+/* ===== RESULT MODAL ===== */
+.result-modal-card{
+  background:linear-gradient(160deg, var(--surface) 0%, var(--bg-2) 100%);
+  border:1.5px solid var(--gold);
+  border-radius:20px;
+  width:100%; max-width:400px; padding:28px 24px 22px;
+  box-shadow:0 40px 80px -20px rgba(0,0,0,0.9), 0 0 60px rgba(232,185,76,0.15);
+  position:relative;
+  animation:resultIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes resultIn{
+  from{ transform:scale(0.9) translateY(20px); opacity:0; }
+  to{ transform:scale(1) translateY(0); opacity:1; }
+}
+
+.result-close{
+  position:absolute; top:12px; right:12px;
+  width:32px; height:32px; border-radius:10px;
+  background:rgba(255,255,255,0.06); border:none;
+  color:var(--text-dim); font-size:15px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.result-trophy{
+  text-align:center; font-size:56px; margin-bottom:8px;
+  filter:drop-shadow(0 0 20px rgba(232,185,76,0.5));
+}
+
+.result-rank{
+  text-align:center; font-size:28px; font-weight:900;
+  color:var(--gold); letter-spacing:-0.02em;
+  margin-bottom:4px;
+  text-shadow:0 0 20px rgba(232,185,76,0.4);
+}
+
+.result-sub{
+  text-align:center; font-size:12.5px; color:var(--text-dim);
+  margin-bottom:22px; letter-spacing:0.04em;
+  text-transform:uppercase;
+}
+
+.result-score-big{
+  text-align:center;
+  padding:22px 0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  margin-bottom:20px;
+}
+.result-score-big .num{
+  font-size:52px; font-weight:900; color:var(--gold);
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+  text-shadow:0 0 30px rgba(232,185,76,0.5);
+}
+.result-score-big .lbl{
+  display:block; font-size:11px; color:var(--text-dim);
+  margin-top:6px; letter-spacing:0.08em; text-transform:uppercase;
+}
+
+.result-stats{
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:10px; margin-bottom:18px;
+}
+.result-stat{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 6px;
+  text-align:center;
+}
+.result-stat .rsv{
+  font-size:15px; font-weight:800; color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.result-stat .rsl{
+  font-size:10px; color:var(--text-dim);
+  margin-top:3px; letter-spacing:0.04em;
+  text-transform:uppercase;
+}
+
+.result-breakdown{
+  background:rgba(0,0,0,0.2);
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:16px;
+  font-size:12px;
+  color:var(--text-dim);
+  line-height:1.8;
+}
+.result-breakdown .bd-row{
+  display:flex; justify-content:space-between;
+}
+.result-breakdown .bd-row .bdv{
+  color:var(--text);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.result-breakdown .bd-row.positive .bdv{ color:var(--teal); }
+.result-breakdown .bd-row.negative .bdv{ color:var(--red); }
+
+
+
+</style>
+
+
+
+
+
 <style>
   :root{
     --bg:#0B0F1A; --bg-2:#101827; --surface:#161F33; --surface-2:#1D2740; --line:#28324C;
@@ -653,6 +784,56 @@
   </div>
 </div>
 
+
+<!-- MY RESULT MODAL -->
+<div class="modal-backdrop" id="resultModal" onclick="if(event.target===this)closeResultModal()">
+  <div class="result-modal-card">
+    <button class="result-close" onclick="closeResultModal()">✕</button>
+    
+    <div class="result-trophy">🏆</div>
+    <div class="result-rank" id="resultRank">—</div>
+    <div class="result-sub" id="resultSub">Your Result</div>
+    
+    <div class="result-score-big">
+      <span class="num" id="resultScore">0</span>
+      <span class="lbl">points</span>
+    </div>
+
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="rsv" id="rsCorrect">0</div>
+        <div class="rsl">Correct</div>
+      </div>
+      <div class="result-stat">
+        <div class="rsv" id="rsWrong">0</div>
+        <div class="rsl">Wrong</div>
+      </div>
+      <div class="result-stat">
+        <div class="rsv" id="rsMissed">0</div>
+        <div class="rsl">Missed</div>
+      </div>
+      <div class="result-stat">
+        <div class="rsv" id="rsAccuracy">0%</div>
+        <div class="rsl">Accuracy</div>
+      </div>
+      <div class="result-stat">
+        <div class="rsv" id="rsReaction">0</div>
+        <div class="rsl">Avg Reaction</div>
+      </div>
+      <div class="result-stat">
+        <div class="rsv" id="rsPrize">—</div>
+        <div class="rsl">Prize Eligible</div>
+      </div>
+    </div>
+
+    <div class="result-breakdown" id="resultBreakdown"></div>
+
+    <button class="modal-close" onclick="closeResultModal()">Close</button>
+  </div>
+</div>
+
+
+
 </div><!-- /#root -->
 
 <!-- Wallet Modal -->
@@ -1242,18 +1423,10 @@ function formatTime(seconds) {
 // ==================== PLAY GAME (no page reload) ====================
 async function playGame() {
   const data = window._currentStageData;
-  if (!data) { alert('Stage not loaded'); return; }
-
-  const stageSlug = data.stage.slug || window.currentStage;
-  console.log('🎮 Playing:', stageSlug, 'data.stage.slug=', data.stage.slug, 'window.currentStage=', window.currentStage);
-
-  if (!stageSlug || stageSlug === 'undefined') {
-    alert('Cannot determine stage slug. Refresh and try again.');
-    return;
-  }
-
+  if (!data) { alert('Stage data not loaded'); return; }
+  const stageSlug = data.stage.slug || currentStage;
   const fee = Number(data.contest.entry_fee).toLocaleString();
-  if (!confirm(`Pay ₦${fee} to play ${data.stage.game}?`)) return;
+  if (!confirm(`Pay ₦${fee} to play ${data.stage.game}?\n\nYou can only play this stage ONCE.`)) return;
 
   try {
     const playResp = await api(`/contest/stage/${stageSlug}/play/`, 'POST');
@@ -1261,14 +1434,19 @@ async function playGame() {
     document.getElementById('wallet-bal-2').textContent = '₦' + Number(playResp.wallet_balance).toLocaleString();
     launchGameInIframe(playResp.game_slug, data.stage.name, playResp);
   } catch (err) {
-    if (err.message.includes('Insufficient')) {
-      alert('Insufficient balance. Fund wallet.');
+    if (err.message.includes('already')) {
+      alert('You have already played this stage.');
+      openStage(stageSlug);
+    } else if (err.message.includes('Insufficient')) {
+      alert('Insufficient balance. Fund your wallet.');
       openWallet();
     } else {
       alert('Could not start: ' + err.message);
     }
   }
 }
+
+
 
 
 
@@ -1380,6 +1558,65 @@ document.querySelectorAll('.toggle-eye').forEach(btn => {
 })();
 
 console.log('Voddic Arena loaded ✅');
+
+// ==================== MY RESULT MODAL ====================
+async function showMyResult(stageSlug) {
+  const modal = document.getElementById('resultModal');
+  modal.classList.add('on');
+  
+  try {
+    const r = await api(`/contest/stage/${stageSlug}/my-result/`);
+    if (!r.has_played) {
+      alert('You have not played this stage');
+      closeResultModal();
+      return;
+    }
+
+    // Header
+    document.getElementById('resultRank').textContent = r.rank ? `Rank #${r.rank}` : '—';
+    document.getElementById('resultSub').textContent = r.prize_eligible ? '✅ Prize Eligible' : 'Not Prize Eligible';
+
+    // Big score
+    document.getElementById('resultScore').textContent = Number(r.final_score).toLocaleString();
+
+    // Stats
+    document.getElementById('rsCorrect').textContent = r.correct;
+    document.getElementById('rsWrong').textContent = r.wrong;
+    document.getElementById('rsMissed').textContent = r.missed;
+    document.getElementById('rsAccuracy').textContent = r.accuracy + '%';
+    document.getElementById('rsReaction').textContent = r.avg_reaction_ms + 'ms';
+    document.getElementById('rsPrize').textContent = r.prize_eligible ? '✅ Yes' : '—';
+
+    // Breakdown
+    const bd = r.breakdown;
+    const bdEl = document.getElementById('resultBreakdown');
+    if (bd) {
+      bdEl.innerHTML = `
+        <div class="bd-row positive"><span>Base score</span><span class="bdv">+${bd.base_score}</span></div>
+        <div class="bd-row positive"><span>Reaction bonus</span><span class="bdv">+${bd.reaction_bonus}</span></div>
+        <div class="bd-row positive"><span>Streak bonus</span><span class="bdv">+${bd.streak_bonus}</span></div>
+        ${bd.wrong_tap_penalty < 0 ? `<div class="bd-row negative"><span>Wrong taps</span><span class="bdv">${bd.wrong_tap_penalty}</span></div>` : ''}
+        ${bd.missed_penalty < 0 ? `<div class="bd-row negative"><span>Missed targets</span><span class="bdv">${bd.missed_penalty}</span></div>` : ''}
+        <div class="bd-row" style="border-top:1px solid var(--line);padding-top:6px;margin-top:6px;">
+          <span style="color:var(--gold);font-weight:700;">Final Score</span>
+          <span class="bdv" style="color:var(--gold);">${r.final_score}</span>
+        </div>
+      `;
+    } else {
+      bdEl.innerHTML = '<div style="text-align:center;">Score verified by server</div>';
+    }
+  } catch (err) {
+    alert('Could not load result: ' + err.message);
+    closeResultModal();
+  }
+}
+
+function closeResultModal() {
+  document.getElementById('resultModal').classList.remove('on');
+}
+
+
+
 </script>
 </body>
 </html>
