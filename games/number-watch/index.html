@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Voddic Number Watch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="brand"><b>VODDIC</b> NUMBER WATCH</div>
+  <div id="card">
+
+    <div id="intro">
+      <h1>Number Watch</h1>
+      <p class="lede">10 to 15 numbers scroll right-to-left, speeding up over 5 minutes, flickering in and out. Tap your target every time — ignore the rest.</p>
+      <div class="targetPreview" id="targetPreview">?</div>
+      <button class="btn" id="startBtn">Start (5:00)</button>
+      <p class="footnote" id="introNote"></p>
+    </div>
+
+    <div id="hud">
+      <span>Target: <b id="hudTarget">–</b></span>
+      <span id="hudTime">5:00 remaining</span>
+    </div>
+    <div class="timerbar" id="timerBar"><div class="fill" id="timerFill"></div></div>
+    <div id="targetBadge"><span class="num" id="targetBadgeNum">–</span><span>Keep tapping this number.</span></div>
+
+    <div id="track"></div>
+    <div id="liveTally">Hits <b id="tallyHits">0</b> · Misses <b id="tallyMisses">0</b> · Wrong <b id="tallyWrong">0</b></div>
+
+    <div id="summary">
+      <h1>Session complete</h1>
+      <p class="lede">Server-verified result.</p>
+      <div class="row"><span>Final Score</span><span class="v" id="rScore">0</span></div>
+      <div class="row"><span>Correct taps</span><span class="v" id="rHits">0</span></div>
+      <div class="row"><span>Missed targets</span><span class="v" id="rMisses">0</span></div>
+      <div class="row"><span>Wrong taps</span><span class="v" id="rWrong">0</span></div>
+      <div class="row"><span>Accuracy</span><span class="v" id="rAcc">0%</span></div>
+      <div class="row"><span>Avg reaction</span><span class="v" id="rReact">0 ms</span></div>
+      <div class="row"><span>Prize eligible</span><span class="v" id="rEligible">—</span></div>
+      <p class="footnote" id="rIntegrity"></p>
+      <button class="btn secondary" id="backBtn" style="margin-top:8px;">Back to Arena</button>
+    </div>
+
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>

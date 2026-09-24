@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -151,7 +150,6 @@
     color:#f5f3ff; font-size:14px; font-weight:700;
     cursor:pointer; margin-top:6px; font-family:inherit; }
   .secondary-btn:active{ background:rgba(107,63,214,0.3); }
-  .secondary-btn.danger{ border-color:var(--error); background:rgba(225,85,84,0.1); color:#ff8f8e; }
 
   .login-link{ background:none; border:none; color:#c9bff2; font-size:14px; cursor:pointer; opacity:0.85; }
   .divider{ display:flex; align-items:center; gap:10px; margin:18px 0 4px; color:#a79fd1; font-size:11.5px; font-weight:600; }
@@ -202,7 +200,7 @@
     border-radius:50%; animation:spin2 0.6s linear infinite; }
   @keyframes spin2{ to{ transform:rotate(360deg); } }
 
-  /* ============ DASHBOARD (game grid) ============ */
+  /* ============ DASHBOARD ============ */
   #dashShell{ max-width:640px; margin:0 auto;
     padding:14px 18px 100px;
     padding-top:calc(14px + env(safe-area-inset-top, 0px)); }
@@ -231,10 +229,7 @@
   .sectionHead h2{ font-size:15px; margin:0; letter-spacing:-0.01em; }
   .sectionHead .note{ font-size:11.5px; color:var(--text-dim); }
 
-  /* Game grid */
-  .game-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:12px;
-  }
+  .game-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .game-card{
     background:var(--surface); border:1px solid var(--line);
     border-radius:14px; padding:14px; cursor:pointer;
@@ -261,9 +256,7 @@
     overflow:hidden; text-overflow:ellipsis; display:-webkit-box;
     -webkit-line-clamp:2; -webkit-box-orient:vertical;
   }
-  .game-card .fee{
-    font-size:11.5px; color:var(--gold); font-weight:700;
-  }
+  .game-card .fee{ font-size:11.5px; color:var(--gold); font-weight:700; }
   .game-card .fee .lbl{ color:var(--text-dim); font-weight:500; margin-right:3px; }
   .game-card .played-badge{
     position:absolute; top:10px; right:10px;
@@ -271,16 +264,13 @@
     color:var(--teal); border-radius:8px; padding:3px 7px;
     font-size:10px; font-weight:700;
   }
-  .game-card .score-display{
-    font-size:11px; color:var(--teal); margin-top:4px; font-weight:600;
-  }
+  .game-card .score-display{ font-size:11px; color:var(--teal); margin-top:4px; font-weight:600; }
   .game-card .live-dot{
     display:inline-block; width:6px; height:6px; border-radius:50%;
     background:var(--teal); margin-right:5px;
     box-shadow:0 0 6px var(--teal); animation:blink2 1.6s ease-in-out infinite;
   }
   @keyframes blink2{ 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
-
   .loading{ text-align:center; color:var(--text-dim); padding:40px 0; font-size:13px; }
 
   /* ============ STAGE VIEW ============ */
@@ -393,9 +383,7 @@
     background:var(--bg); flex-direction:column;
   }
   #gamePlayer.on{ display:flex; }
-  #gameFrame{
-    flex:1; width:100%; border:none; background:var(--bg);
-  }
+  #gameFrame{ flex:1; width:100%; border:none; background:var(--bg); }
   #gameTopbar{
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px));
@@ -409,11 +397,6 @@
     font-size:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
-
-
-
-
-  .modal-card input:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(232,185,76,0.18); }
 </style>
 </head>
 <body>
@@ -592,7 +575,7 @@
   </div>
 </div>
 
-<!-- DASHBOARD (game grid) -->
+<!-- DASHBOARD -->
 <div class="view" id="view-dashboard">
   <div id="dashShell">
     <div id="topbar">
@@ -609,7 +592,7 @@
     <div class="dash-hero">
       <div class="tag">LIVE NOW</div>
       <h1>Play. Compete. Win.</h1>
-      <p>50 skill games. Pick a game, pay the entry, and climb the leaderboard.</p>
+      <p>50 skill games. Pick a game, pay the entry, climb the leaderboard.</p>
     </div>
 
     <div class="sectionHead">
@@ -626,7 +609,7 @@
   </div>
 </div>
 
-<!-- STAGE DETAIL -->
+<!-- STAGE -->
 <div class="view" id="view-stage">
   <div id="stageShell">
     <div id="topbar">
@@ -672,47 +655,22 @@
 
 </div><!-- /#root -->
 
-
-
-
-
-
-
 <!-- Wallet Modal -->
 <div class="modal-backdrop" id="walletModal" onclick="if(event.target===this)closeWallet()">
   <div class="modal-card">
     <h2>Wallet</h2>
     <div class="sub" id="walletEmail">—</div>
     <div class="bal-big"><span class="cur">₦</span><span id="walletModalBal">0</span></div>
-
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Quick top-up</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Fund wallet</div>
     <div class="amount-grid">
-      <button onclick="startTopup(500)">₦500</button>
-      <button onclick="startTopup(1000)">₦1,000</button>
-      <button onclick="startTopup(5000)">₦5,000</button>
+      <button onclick="topup(500)">₦500</button>
+      <button onclick="topup(1000)">₦1k</button>
+      <button onclick="topup(5000)">₦5k</button>
     </div>
-
-    <div style="font-size:12px;color:var(--text-dim);margin:12px 0 6px;">Custom amount (min ₦100)</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <input id="customTopupAmount" type="number" min="100" step="50" placeholder="1000"
-        style="flex:1;padding:12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-size:15px;">
-      <button onclick="startTopup(document.getElementById('customTopupAmount').value)"
-        style="padding:12px 18px;border-radius:10px;background:var(--gold);color:#1A1305;font-weight:700;border:none;font-size:14px;cursor:pointer;">
-        Fund
-      </button>
-    </div>
-
-    <div id="topupStatus" style="display:none;font-size:12.5px;padding:10px 12px;border-radius:10px;margin-bottom:10px;"></div>
-
+    <div class="message" id="wallet-msg"></div>
     <button class="modal-close" onclick="closeWallet()">Close</button>
   </div>
 </div>
-
-
-
-
-
-
 
 <!-- Fullscreen Game Player -->
 <div id="gamePlayer">
@@ -720,7 +678,7 @@
     <div class="title" id="gameTitle">Loading game…</div>
     <button class="close" onclick="closeGame()">✕</button>
   </div>
-  <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
 </div>
 
 <script>
@@ -737,7 +695,6 @@ let hasPin = false;
 let hasBiometric = false;
 let currentStage = null;
 
-// PIN state
 let currentPin = '';
 let pinMode = 'setup';
 let pinStage = 'first';
@@ -780,11 +737,15 @@ async function api(endpoint, method = 'GET', data = null, retry = true) {
   const config = { method, headers };
   if (data) config.body = JSON.stringify(data);
 
+  const url = `${API_BASE}${endpoint}`;
+  console.log(`[API] ${method} ${url}`);
+
   let res, json;
   try {
-    res = await fetch(`${API_BASE}${endpoint}`, config);
+    res = await fetch(url, config);
     json = await res.json().catch(() => ({}));
-  } catch {
+  } catch (e) {
+    console.error(`[API] Network error for ${url}:`, e);
     throw new Error('Network error');
   }
 
@@ -798,6 +759,7 @@ async function api(endpoint, method = 'GET', data = null, retry = true) {
   if (!res.ok) {
     let msg = json.error || json.detail || 'Request failed';
     if (Array.isArray(msg)) msg = msg[0];
+    console.error(`[API] ${res.status} ${url}:`, msg);
     throw new Error(msg);
   }
   return json;
@@ -832,7 +794,6 @@ function saveSetupState(data) {
   localStorage.setItem('arena_has_bio', hasBiometric);
 }
 
-// base64url
 function bufferToBase64url(buffer) {
   const bytes = new Uint8Array(buffer);
   let s = '';
@@ -1053,7 +1014,7 @@ async function setupPlatformBiometric() {
     return true;
   } catch (e) {
     let msg = 'Setup failed. ';
-    if (e.name === 'NotAllowedError') msg = 'Cancelled or already registered. Delete any saved passkey for voddic.com.ng in phone Settings, then try again.';
+    if (e.name === 'NotAllowedError') msg = 'Cancelled or already registered. Delete any saved passkey in phone Settings, then try again.';
     else if (e.name === 'InvalidStateError') msg = 'This device already has a fingerprint.';
     else msg += (e.message || e.name);
     document.getElementById('bio-status').textContent = msg;
@@ -1136,14 +1097,11 @@ function renderGameGrid(games) {
     return;
   }
   const ICONS = {
-    number_watch: '🔢',
-    shape_orb: '🔷',
-    letter_hunt: '🔤',
-    memory_grid: '🧠',
-    reaction_tap: '⚡'
+    number_watch: '🔢', shape_orb: '🔷', letter_hunt: '🔤',
+    memory_grid: '🧠', reaction_tap: '⚡'
   };
   grid.innerHTML = games.map(g => `
-    <div class="game-card" onclick="openStage('${g.stage_slug || g.slug}')">
+    <div class="game-card" onclick="openStage('${g.slug}')">
       ${g.user_played ? '<div class="played-badge">✓</div>' : ''}
       <div class="icon">${ICONS[g.challenge_type] || '🎮'}</div>
       <div class="name">${g.name}</div>
@@ -1158,13 +1116,18 @@ function renderGameGrid(games) {
 
 // ==================== STAGE VIEW ====================
 async function openStage(stageSlug) {
+  console.log('🎯 openStage called with slug:', stageSlug);
+  if (!stageSlug || stageSlug === 'undefined' || stageSlug === 'null') {
+    alert('Invalid stage slug: ' + stageSlug);
+    return;
+  }
   currentStage = stageSlug;
   showView('view-stage');
   try {
     const data = await api(`/contest/stage/${stageSlug}/`);
     renderStage(data);
   } catch (err) {
-    alert('Could not load stage: ' + err.message);
+    alert('Could not load stage "' + stageSlug + '": ' + err.message);
     showView('view-dashboard');
   }
 }
@@ -1185,14 +1148,13 @@ function renderStage(data) {
     youSub.textContent = "You've completed this stage";
     youAction.innerHTML = `<div class="doneChip">Score: ${data.user_entry.score}</div>`;
   } else if (!data.wallet.can_afford) {
-    youSub.textContent = `Need ₦${Number(data.contest.entry_fee).toLocaleString()} — your wallet: ₦${Number(data.wallet.balance).toLocaleString()}`;
+    youSub.textContent = `Need ₦${Number(data.contest.entry_fee).toLocaleString()} — wallet: ₦${Number(data.wallet.balance).toLocaleString()}`;
     youAction.innerHTML = `<button class="playBtn" onclick="openWallet()">Add funds</button>`;
   } else {
     youSub.textContent = `₦${Number(data.contest.entry_fee).toLocaleString()} will be debited from your wallet`;
     youAction.innerHTML = `<button class="playBtn" onclick="playGame()">Play now</button>`;
   }
 
-  // Leaderboard podium
   const ranked = data.leaderboard.slice(0, 3);
   const podium = document.getElementById('podium');
   podium.innerHTML = '';
@@ -1239,7 +1201,6 @@ function renderStage(data) {
   });
   document.getElementById('rosterCount').textContent = data.roster.length + ' registered';
 
-  // Store for play action
   window._currentStageData = data;
 }
 
@@ -1254,48 +1215,58 @@ function formatTime(seconds) {
 // ==================== PLAY GAME (no page reload) ====================
 async function playGame() {
   const data = window._currentStageData;
-  if (!data) return;
-  if (!confirm(`Pay ₦${Number(data.contest.entry_fee).toLocaleString()} to play ${data.stage.game}?`)) return;
+  if (!data) { alert('Stage data not loaded. Please refresh.'); return; }
+
+  const stageSlug = currentStage || data.stage.slug;
+  console.log('🎮 Playing stage:', stageSlug);
+
+  const fee = Number(data.contest.entry_fee).toLocaleString();
+  if (!confirm(`Pay ₦${fee} to play ${data.stage.game}?`)) return;
 
   try {
-    // 1. Ask backend to debit wallet and create session
-    const playResp = await api(`/contest/stage/${data.stage.slug}/play/`, 'POST');
+    const playResp = await api(`/contest/stage/${stageSlug}/play/`, 'POST');
+    console.log('✅ Play response:', playResp);
 
-    // 2. Refresh wallet display
     document.getElementById('wallet-bal').textContent = '₦' + Number(playResp.wallet_balance).toLocaleString();
     document.getElementById('wallet-bal-2').textContent = '₦' + Number(playResp.wallet_balance).toLocaleString();
 
-    // 3. Open the game fullscreen in iframe (no page reload)
-    launchGameInIframe(data.stage.game_slug, data.stage.name);
+    launchGameInIframe(playResp.game_slug, data.stage.name, playResp);
   } catch (err) {
-    alert(err.message);
-    if (err.message.includes('Insufficient')) openWallet();
+    if (err.message.includes('Insufficient')) {
+      alert('Insufficient balance. Fund your wallet.');
+      openWallet();
+    } else {
+      alert('Could not start: ' + err.message);
+    }
   }
 }
 
-function launchGameInIframe(gameSlug, gameName) {
+function launchGameInIframe(gameSlug, gameName, playResp) {
   const frame = document.getElementById('gameFrame');
   const title = document.getElementById('gameTitle');
-  // Pass auth via query string — game iframe reads token from localStorage of parent? No, different origin.
-  // We use postMessage to pass the token after iframe loads.
   const gameUrl = `/games/${gameSlug}/`;
+
+  console.log('🎮 Loading game:', gameUrl);
   title.textContent = gameName;
   frame.src = gameUrl;
   document.getElementById('gamePlayer').classList.add('on');
   document.body.style.overflow = 'hidden';
 
-  // Pass token via postMessage after load
+  // Pass auth to iframe after it loads
   frame.onload = () => {
     try {
       frame.contentWindow.postMessage({
         type: 'voddic_auth',
-        accessToken,
-        refreshToken,
-        userEmail,
-        userName,
-        apiBase: API_BASE
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        userEmail: userEmail,
+        userName: userName,
+        apiBase: API_BASE,
+        stageSlug: currentStage,
+        stageId: playResp.stage_id,
+        playResp: playResp
       }, '*');
-    } catch (e) {}
+    } catch (e) { console.warn('postMessage error:', e); }
   };
 }
 
@@ -1303,22 +1274,21 @@ function closeGame() {
   document.getElementById('gamePlayer').classList.remove('on');
   document.getElementById('gameFrame').src = 'about:blank';
   document.body.style.overflow = '';
-  // Refresh stage data (score may have changed)
-  if (currentStage) openStage(currentStage);
+  if (currentStage) {
+    // Refresh stage data in background
+    setTimeout(() => openStage(currentStage), 300);
+  }
 }
 
-// Listen for messages from game iframe (when game completes)
+// Game notifies parent when complete
 window.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'voddic_game_complete') {
-    console.log('Game complete:', event.data);
-    // Close game and refresh stage after short delay
-    setTimeout(() => {
-      closeGame();
-    }, 500);
+    console.log('✅ Game complete:', event.data);
+    setTimeout(() => closeGame(), 500);
   }
 });
 
-// ==================== WALLET MODAL ====================
+// ==================== WALLET ====================
 async function openWallet() {
   document.getElementById('walletModal').classList.add('on');
   try {
@@ -1332,137 +1302,13 @@ function closeWallet() {
 }
 
 function topup(amount) {
-  alert('Wallet funding coming soon. Contact support to add ₦' + amount.toLocaleString());
+  alert('Paystack integration ready — add your keys to enable funding. Amount: ₦' + amount.toLocaleString());
 }
-
-
-
-// ==================== PAYSTACK TOPUP ====================
-let paystackScriptLoaded = false;
-
-async function loadPaystackScript() {
-  if (paystackScriptLoaded) return;
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://js.paystack.co/v1/inline.js';
-    s.onload = () => { paystackScriptLoaded = true; resolve(); };
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
-async function startTopup(amount) {
-  amount = Number(amount);
-  if (!amount || amount < 100) {
-    showTopupStatus('Minimum top-up is ₦100', 'error');
-    return;
-  }
-  if (amount > 500000) {
-    showTopupStatus('Maximum top-up is ₦500,000', 'error');
-    return;
-  }
-
-  showTopupStatus('Preparing payment…', 'info');
-
-  try {
-    // 1. Ask backend to initialize the transaction
-    const init = await api('/wallet/topup/initiate/', 'POST', { amount });
-
-    // 2. Load Paystack inline script
-    await loadPaystackScript();
-
-    // 3. Get public key from backend
-    const pk = await api('/wallet/paystack/public-key/');
-
-    showTopupStatus('Opening Paystack…', 'info');
-
-    // 4. Open Paystack popup
-    const handler = PaystackPop.setup({
-      key: pk.public_key,
-      email: userEmail,
-      amount: Math.round(amount * 100), // kobo
-      currency: 'NGN',
-      ref: init.reference,
-      metadata: {
-        custom_fields: [
-          { display_name: 'Voddic User', variable_name: 'user', value: userEmail }
-        ]
-      },
-      callback: function(response) {
-        // Payment success — verify server-side
-        showTopupStatus('Verifying payment…', 'info');
-        verifyTopup(response.reference);
-      },
-      onClose: function() {
-        showTopupStatus('Payment window closed.', 'error');
-      }
-    });
-    handler.openIframe();
-  } catch (err) {
-    console.error('Topup error:', err);
-    showTopupStatus(err.message || 'Could not start payment', 'error');
-  }
-}
-
-async function verifyTopup(reference) {
-  try {
-    const res = await api(`/wallet/topup/verify/${reference}/`);
-    if (res.status === 'SUCCESS') {
-      showTopupStatus(`✅ Wallet credited. New balance: ₦${Number(res.balance).toLocaleString()}`, 'success');
-      document.getElementById('walletModalBal').textContent = Number(res.balance).toLocaleString();
-      document.getElementById('wallet-bal').textContent = '₦' + Number(res.balance).toLocaleString();
-      document.getElementById('wallet-bal-2').textContent = '₦' + Number(res.balance).toLocaleString();
-    } else {
-      showTopupStatus('Payment pending: ' + (res.message || res.status), 'info');
-      // Poll a few times
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        try {
-          const r = await api(`/wallet/topup/verify/${reference}/`);
-          if (r.status === 'SUCCESS') {
-            clearInterval(poll);
-            showTopupStatus(`✅ Wallet credited: ₦${Number(r.balance).toLocaleString()}`, 'success');
-            document.getElementById('walletModalBal').textContent = Number(r.balance).toLocaleString();
-            document.getElementById('wallet-bal').textContent = '₦' + Number(r.balance).toLocaleString();
-            document.getElementById('wallet-bal-2').textContent = '₦' + Number(r.balance).toLocaleString();
-          }
-        } catch (e) {}
-        if (attempts > 10) clearInterval(poll);
-      }, 3000);
-    }
-  } catch (err) {
-    showTopupStatus('Verification failed: ' + err.message, 'error');
-  }
-}
-
-function showTopupStatus(msg, type) {
-  const el = document.getElementById('topupStatus');
-  el.style.display = 'block';
-  el.textContent = msg;
-  if (type === 'success') {
-    el.style.background = 'rgba(63,199,176,0.15)';
-    el.style.color = '#7fe8d5';
-    el.style.border = '1px solid rgba(63,199,176,0.3)';
-  } else if (type === 'error') {
-    el.style.background = 'rgba(225,85,84,0.1)';
-    el.style.color = '#ff8f8e';
-    el.style.border = '1px solid rgba(225,85,84,0.3)';
-  } else {
-    el.style.background = 'rgba(107,63,214,0.15)';
-    el.style.color = '#c9bff2';
-    el.style.border = '1px solid rgba(155,107,240,0.3)';
-  }
-}
-
-
-
 
 // ==================== LOGOUT ====================
 function handleLogout() {
   localStorage.removeItem('arena_access');
   localStorage.removeItem('arena_refresh');
-  // Keep credential_id and email so biometric login still works next time
   accessToken = null;
   refreshToken = null;
   hasPin = false;
