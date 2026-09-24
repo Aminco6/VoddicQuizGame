@@ -247,7 +247,7 @@ function showTargetChangeBanner(newTarget) {
       overlay.remove();
       if (targetBannerEl === overlay) targetBannerEl = null;
     }, 300);
-  }, 2000);
+  }, 3000);
 }
 
 // ==================== SPAWN ====================
@@ -418,31 +418,66 @@ async function endGame() {
   document.getElementById('track').classList.remove('on');
   document.getElementById('liveTally').classList.remove('on');
 
-  // Show loading state while finalizing
   document.getElementById('summary').innerHTML = `
     <h1>Verifying…</h1>
     <p class="lede">Server is calculating your final score.</p>
   `;
   document.getElementById('summary').style.display = 'block';
 
-  try {
-    const finish = await voddicFetch('/game/finish/', {
-      method: 'POST',
-      body: JSON.stringify({ session_token: sessionToken })
-    });
-    console.log('Finish:', finish);
+  // Try to finalize immediately, then poll /result/ until FINALIZED or timeout
+  let finalized = false;
+  let attempts = 0;
+  const maxAttempts = 60; // 2 minutes
 
-    if (finish.status === 'PENDING') {
-      pollForResult();
-    } else {
-      showResult(finish);
+  while (!finalized && attempts < maxAttempts) {
+    attempts++;
+    try {
+      // On first try, call /finish/ (server may finalize if we're near expiry)
+      if (attempts === 1 || attempts % 10 === 0) {
+        try {
+          const finish = await voddicFetch('/game/finish/', {
+            method: 'POST',
+            body: JSON.stringify({ session_token: sessionToken })
+          });
+          console.log(`Finish attempt ${attempts}:`, finish);
+          if (finish.status === 'FINALIZED') {
+            showResult(finish);
+            finalized = true;
+            break;
+          }
+        } catch (e) {
+          console.warn('Finish call failed, will poll /result/');
+        }
+      }
+
+      // Poll /result/ — this auto-finalizes when server time >= expires_at
+      const res = await voddicFetch(`/game/session/${sessionToken}/result/`);
+      console.log(`Result poll ${attempts}:`, res.status);
+
+      if (res.status === 'FINALIZED') {
+        showResult(res);
+        finalized = true;
+        break;
+      }
+
+      // Wait 2s before next attempt
+      await new Promise(r => setTimeout(r, 2000));
+    } catch (e) {
+      console.warn(`Finalize attempt ${attempts} failed:`, e.message);
+      await new Promise(r => setTimeout(r, 2000));
     }
-  } catch (e) {
-    console.error('Finish failed:', e);
-    // Even if finish fails, try polling the result
-    pollForResult();
+  }
+
+  if (!finalized) {
+    document.getElementById('summary').innerHTML = `
+      <h1>Still Verifying…</h1>
+      <p class="lede">Server is taking longer than expected. Your score will be ready shortly.</p>
+      <button class="btn secondary" onclick="window.parent.postMessage({type:'voddic_game_complete'},'*')">Back to Arena</button>
+    `;
   }
 }
+
+
 
 async function pollForResult() {
   let attempts = 0;
@@ -465,7 +500,7 @@ async function pollForResult() {
         integrity_status: 'TIMEOUT'
       });
     }
-  }, 2000);
+  }, 3000);
 }
 
 function showResult(r) {
