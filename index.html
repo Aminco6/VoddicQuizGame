@@ -1147,7 +1147,7 @@ function renderStage(data) {
 
   if (data.user_entry.completed) {
     youSub.textContent = "You've completed this stage";
-    youAction.innerHTML = `<div class="doneChip">Score: ${data.user_entry.score}</div>`;
+    youAction.innerHTML = `<button class="playBtn" onclick="showMyResult('${data.stage.slug}')">View Score</button>`;
   } else if (!data.wallet.can_afford) {
     youSub.textContent = `Need ₦${Number(data.contest.entry_fee).toLocaleString()} — wallet: ₦${Number(data.wallet.balance).toLocaleString()}`;
     youAction.innerHTML = `<button class="playBtn" onclick="openWallet()">Add funds</button>`;
@@ -1156,54 +1156,80 @@ function renderStage(data) {
     youAction.innerHTML = `<button class="playBtn" onclick="playGame()">Play now</button>`;
   }
 
+  // ===== Podium (top 3) =====
   const ranked = data.leaderboard.slice(0, 3);
   const podium = document.getElementById('podium');
   podium.innerHTML = '';
   const order = [ranked[1], ranked[0], ranked[2]];
   const classes = ['p2', 'p1', 'p3'];
   const medals = ['🥈 2nd', '🥇 1st', '🥉 3rd'];
+  const prizes = [data.contest.prize_2nd, data.contest.prize_1st, data.contest.prize_3rd];
   order.forEach((c, i) => {
     if (!c) return;
     const w = document.createElement('div');
     w.className = 'standWrap';
-    w.innerHTML = `<div class="medal">${medals[i]}</div>
+    w.innerHTML = `
+      <div class="medal">${medals[i]}</div>
       <div class="pname">${c.name}${c.is_you ? ' · You' : ''}</div>
       <div class="pscore">${c.score} pts</div>
-      <div class="stand ${classes[i]}"></div>`;
+      <div class="prize-tag">₦${Number(prizes[i] || 0).toLocaleString()}</div>
+      <div class="stand ${classes[i]}"></div>
+    `;
     podium.appendChild(w);
   });
 
+  // ===== Leaderboard rest =====
   const rest = document.getElementById('lbRest');
   rest.innerHTML = '';
   data.leaderboard.slice(3).forEach((c, i) => {
     const row = document.createElement('div');
     row.className = 'lbRow';
-    row.innerHTML = `<span class="rank">${i+4}</span>
+    row.innerHTML = `
+      <span class="rank">${i+4}</span>
       <span class="nm">${c.name}${c.is_you ? ' · You' : ''}</span>
-      <span class="sc">${c.score}</span>`;
+      <span class="sc">${c.score}</span>
+    `;
     rest.appendChild(row);
   });
 
+  // ===== Roster (auto-sorted by score) =====
   const roster = document.getElementById('roster');
   roster.innerHTML = '';
   data.roster.forEach(c => {
     const row = document.createElement('div');
     row.className = 'rRow';
     const initials = c.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
-    row.innerHTML = `<div class="avatar">${initials}</div>
+    const statusClass = c.played ? 'done' : 'pending';
+    const statusText = c.played ? `Completed · Rank #${c.rank || '—'}` : 'Not played yet';
+    
+    let actionHTML = '';
+    if (c.played) {
+      if (c.is_you) {
+        actionHTML = `<button class="mini view-btn" onclick="showMyResult('${data.stage.slug}')">View ${c.score}</button>`;
+      } else {
+        actionHTML = `<span class="score">${c.score}</span>`;
+      }
+    } else if (c.is_you && data.wallet.can_afford) {
+      actionHTML = `<button class="mini" onclick="playGame()">Play</button>`;
+    }
+    
+    row.innerHTML = `
+      <div class="avatar">${initials}</div>
       <div class="info">
         <div class="nm">${c.name}${c.is_you ? ' (You)' : ''}</div>
-        <div class="status ${c.played ? 'done' : 'pending'}">${c.played ? 'Completed' : 'Not played yet'}</div>
+        <div class="status ${statusClass}">${statusText}</div>
       </div>
-      <div class="action">${c.played
-        ? `<span class="score">${c.score}</span>`
-        : (c.is_you && data.wallet.can_afford ? `<button class="mini" onclick="playGame()">Play</button>` : '')}</div>`;
+      <div class="action">${actionHTML}</div>
+    `;
     roster.appendChild(row);
   });
   document.getElementById('rosterCount').textContent = data.roster.length + ' registered';
 
   window._currentStageData = data;
 }
+
+
+
 
 function formatTime(seconds) {
   const d = Math.floor(seconds / 86400);
