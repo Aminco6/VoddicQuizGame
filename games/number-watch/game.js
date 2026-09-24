@@ -1,17 +1,10 @@
-
 (function(){
 "use strict";
 
 // ==================== VODDIC AUTH ====================
 window.__VODDIC__ = {
-  token: null,
-  apiBase: null,
-  userEmail: null,
-  userName: null,
-  stageId: null,
-  stageSlug: null,
-  playResp: null,
-  ready: false
+  token: null, apiBase: null, userEmail: null, userName: null,
+  stageId: null, stageSlug: null, playResp: null, ready: false
 };
 
 window.addEventListener('message', (e) => {
@@ -40,7 +33,7 @@ async function voddicFetch(path, opts = {}) {
 }
 
 // ==================== STATE ====================
-var DURATION_MS = 5*60*1000;
+var DURATION_MS = 5 * 60 * 1000;
 var LANES = 6;
 var track = document.getElementById('track');
 var target = null;
@@ -50,14 +43,14 @@ var startTime = 0;
 var lastFrame = 0;
 var activeNumbers = [];
 var laneY = [];
-var laneSpacing = 0;
-var currentWindowEndMs = 0;
+var lastWindowIndex = -1;
 
-var displayTally = { hits:0, misses:0, wrong:0 };
+var displayTally = { hits: 0, misses: 0, wrong: 0 };
 var eventQueue = [];
 var flushTimer = null;
 var pollTimer = null;
 var heartbeatTimer = null;
+var targetBannerEl = null;
 
 // ==================== HELPERS ====================
 function newEventId() {
@@ -73,14 +66,13 @@ function showConnStatus(msg) {
   }
   el.textContent = msg;
   el.classList.add('on');
-  setTimeout(() => el.classList.remove('on'), 2500);
+  setTimeout(() => el.classList.remove('on'), 2000);
 }
 
 // ==================== INTRO ====================
 function initIntro() {
   document.getElementById('targetPreview').textContent = '?';
-  document.getElementById('introNote').textContent =
-    'Your target will be assigned by the server when you start.';
+  document.getElementById('introNote').textContent = 'Target assigned by server when you start.';
   document.getElementById('startBtn').disabled = false;
 }
 
@@ -91,7 +83,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
   }
 });
 
-// ==================== START SERVER SESSION ====================
+// ==================== START ====================
 async function startServerSession() {
   const btn = document.getElementById('startBtn');
   btn.disabled = true;
@@ -99,15 +91,14 @@ async function startServerSession() {
 
   try {
     if (!window.__VODDIC__.ready) {
-      // Wait for auth message up to 5 seconds
       await new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error('Auth not received')), 5000);
+        const t = setTimeout(() => reject(new Error('Auth timeout')), 5000);
         window.addEventListener('voddic_ready', () => { clearTimeout(t); resolve(); }, { once: true });
       });
     }
 
     const stageId = window.__VODDIC__.stageId;
-    if (!stageId) throw new Error('No stage ID provided');
+    if (!stageId) throw new Error('No stage ID');
 
     const session = await voddicFetch('/game/start/', {
       method: 'POST',
@@ -118,21 +109,20 @@ async function startServerSession() {
     target = session.target_value;
     DURATION_MS = session.duration_seconds * 1000;
 
-    console.log('✅ Session started:', session.session_token);
+    console.log('✅ Session:', sessionToken);
     console.log('   Target:', target);
-    console.log('   Duration:', session.duration_seconds, 's');
 
     document.getElementById('targetPreview').textContent = target;
     beginGame(session);
   } catch (e) {
     console.error('Start failed:', e);
-    alert('Could not start game: ' + e.message);
+    alert('Could not start: ' + e.message);
     btn.disabled = false;
     btn.textContent = 'Start (5:00)';
   }
 }
 
-// ==================== BEGIN GAME ====================
+// ==================== BEGIN ====================
 function beginGame(session) {
   document.getElementById('intro').style.display = 'none';
   document.getElementById('hud').classList.add('on');
@@ -144,18 +134,20 @@ function beginGame(session) {
   document.getElementById('hudTarget').textContent = target;
   document.getElementById('targetBadgeNum').textContent = target;
 
-  displayTally = { hits:0, misses:0, wrong:0 };
+  displayTally = { hits: 0, misses: 0, wrong: 0 };
   activeNumbers = [];
   eventQueue = [];
+  lastWindowIndex = -1;
 
   setupLanes();
 
-  // Load first window
+  // Schedule the initial windows
   if (session.windows && session.windows.length > 0) {
     for (const w of session.windows) {
       scheduleWindow(w);
-      currentWindowEndMs = Math.max(currentWindowEndMs, w.ends_at_ms);
+      lastWindowIndex = Math.max(lastWindowIndex, w.window_index);
     }
+    console.log(`📦 Scheduled initial windows 0..${lastWindowIndex}`);
   }
 
   running = true;
@@ -163,16 +155,14 @@ function beginGame(session) {
   lastFrame = startTime;
   requestAnimationFrame(loop);
 
-  // Start periodic flushers/pollers
   flushTimer = setInterval(flushEvents, 1200);
-  pollTimer = setInterval(pollWindows, 8000);
+  pollTimer = setInterval(pollWindows, 5000);
   heartbeatTimer = setInterval(sendHeartbeat, 5000);
 }
 
 // ==================== LANES ====================
 function setupLanes() {
   var h = track.clientHeight || 300;
-  var w = track.clientWidth || 600;
   laneY = [];
   track.innerHTML = '';
   for (var i = 0; i < LANES; i++) {
@@ -183,14 +173,17 @@ function setupLanes() {
     guide.style.top = y + 'px';
     track.appendChild(guide);
   }
-  laneSpacing = (w * LANES) / 12;
 }
 
 // ==================== WINDOW SCHEDULING ====================
 function scheduleWindow(windowData) {
-  if (!windowData || !windowData.objects) return;
-  for (const obj of windowData.objects) {
-    scheduleObject(obj);
+  if (!windowData) return;
+  console.log(`📦 Scheduling window ${windowData.window_index}: ${windowData.objects.length} objects, ${windowData.target_changes.length} target changes`);
+  
+  if (windowData.objects) {
+    for (const obj of windowData.objects) {
+      scheduleObject(obj);
+    }
   }
   if (windowData.target_changes) {
     for (const tc of windowData.target_changes) {
@@ -202,6 +195,7 @@ function scheduleWindow(windowData) {
 function scheduleObject(obj) {
   const delay = obj.spawn_at_ms - (performance.now() - startTime);
   if (delay <= 0) {
+    // Object's spawn time already passed — spawn immediately
     spawnObject(obj);
   } else {
     setTimeout(() => spawnObject(obj), delay);
@@ -210,30 +204,56 @@ function scheduleObject(obj) {
 
 function scheduleTargetChange(tc) {
   const delay = tc.at_ms - (performance.now() - startTime);
-  if (delay <= 0) return;
-  setTimeout(() => {
-    target = tc.new_target;
-    document.getElementById('hudTarget').textContent = tc.new_target;
-    document.getElementById('targetBadgeNum').textContent = tc.new_target;
-    showTargetChangeBanner(tc.new_target);
-  }, delay);
+  console.log(`🎯 Target change scheduled in ${delay}ms → ${tc.new_target}`);
+  if (delay <= 0) {
+    applyTargetChange(tc.new_target);
+  } else {
+    setTimeout(() => applyTargetChange(tc.new_target), delay);
+  }
+}
+
+function applyTargetChange(newTarget) {
+  target = newTarget;
+  document.getElementById('hudTarget').textContent = newTarget;
+  document.getElementById('targetBadgeNum').textContent = newTarget;
+  showTargetChangeBanner(newTarget);
 }
 
 function showTargetChangeBanner(newTarget) {
+  // Remove any existing banner
+  if (targetBannerEl) targetBannerEl.remove();
+  
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(14,19,32,0.9);border-radius:10px;';
+  overlay.style.cssText = `
+    position:absolute; inset:0; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(14,19,32,0.92); border-radius:10px;
+    animation: fadeIn 0.15s ease;
+  `;
   overlay.innerHTML = `
-    <div style="font-size:14px;color:#3FC7B0;letter-spacing:2px;margin-bottom:10px;">TARGET CHANGED</div>
-    <div style="font-size:72px;font-weight:900;color:#E8B94C;">${newTarget}</div>
-    <div style="font-size:13px;color:#8B93A7;margin-top:10px;">Tap every ${newTarget} you see</div>
+    <div style="font-size:14px;color:#3FC7B0;letter-spacing:3px;margin-bottom:14px;font-weight:700;">TARGET CHANGED</div>
+    <div style="font-size:88px;font-weight:900;color:#E8B94C;line-height:1;text-shadow:0 0 30px rgba(232,185,76,0.6);">${newTarget}</div>
+    <div style="font-size:14px;color:#EDEFF4;margin-top:16px;">Tap every ${newTarget} you see</div>
   `;
   track.parentNode.style.position = 'relative';
   track.parentNode.appendChild(overlay);
-  setTimeout(() => overlay.remove(), 1800);
+  targetBannerEl = overlay;
+  
+  // Auto-dismiss after 2 seconds
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.3s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.remove();
+      if (targetBannerEl === overlay) targetBannerEl = null;
+    }, 300);
+  }, 2000);
 }
 
-// ==================== SPAWN OBJECT ====================
+// ==================== SPAWN ====================
 function spawnObject(obj) {
+  if (!running) return;
+  
   var w = track.clientWidth || 600;
   var el = document.createElement('div');
   el.className = 'num-piece';
@@ -250,6 +270,7 @@ function spawnObject(obj) {
     objId: obj.object_id,
     isTarget: obj.is_target,
     lane: obj.lane,
+    velocity: obj.velocity,
     spawnPerfMs: performance.now() - startTime,
     done: false
   };
@@ -259,7 +280,6 @@ function spawnObject(obj) {
     piece.done = true;
     const nowMs = Math.round(performance.now() - startTime);
 
-    // Queue event — server validates
     eventQueue.push({
       event_id: newEventId(),
       object_id: piece.objId,
@@ -267,7 +287,6 @@ function spawnObject(obj) {
       client_time_ms: nowMs
     });
 
-    // Optimistic visual feedback
     if (piece.isTarget) {
       el.classList.add('correct-flash');
       displayTally.hits++;
@@ -295,12 +314,13 @@ function loop(now) {
     return;
   }
 
+  // Speed ramps 55 → 320 px/s across the full duration
   var speed = 55 + (320 - 55) * Math.min(elapsedMs / DURATION_MS, 1);
 
   var remaining = Math.max(0, DURATION_MS - elapsedMs);
   var m = Math.floor(remaining / 60000);
   var s = Math.floor((remaining % 60000) / 1000);
-  document.getElementById('hudTime').textContent = `${m}:${(s<10?'0':'')}${s} remaining`;
+  document.getElementById('hudTime').textContent = `${m}:${(s < 10 ? '0' : '')}${s} remaining`;
   document.getElementById('timerFill').style.width = (100 - (elapsedMs / DURATION_MS) * 100) + '%';
 
   for (var i = activeNumbers.length - 1; i >= 0; i--) {
@@ -326,7 +346,7 @@ function updateTally() {
   document.getElementById('tallyWrong').textContent = displayTally.wrong;
 }
 
-// ==================== EVENT FLUSH ====================
+// ==================== EVENTS ====================
 async function flushEvents() {
   if (!sessionToken || eventQueue.length === 0) return;
   const batch = eventQueue.splice(0, eventQueue.length);
@@ -336,7 +356,7 @@ async function flushEvents() {
       body: JSON.stringify({ session_token: sessionToken, events: batch })
     });
   } catch (e) {
-    console.warn('Event flush failed, re-queuing:', e);
+    console.warn('Flush failed, re-queue:', e);
     eventQueue.unshift(...batch);
     showConnStatus('● reconnecting…');
   }
@@ -346,16 +366,21 @@ async function flushEvents() {
 async function pollWindows() {
   if (!sessionToken || !running) return;
   try {
-    const res = await voddicFetch(`/game/session/${sessionToken}/windows/?from_ms=${currentWindowEndMs}`);
+    const elapsedMs = Math.round(performance.now() - startTime);
+    const res = await voddicFetch(`/game/session/${sessionToken}/windows/?from_ms=${elapsedMs}`);
     if (res.windows && res.windows.length > 0) {
+      let newCount = 0;
       for (const w of res.windows) {
-        scheduleWindow(w);
-        currentWindowEndMs = Math.max(currentWindowEndMs, w.ends_at_ms);
+        if (w.window_index > lastWindowIndex) {
+          scheduleWindow(w);
+          lastWindowIndex = w.window_index;
+          newCount++;
+        }
       }
+      if (newCount > 0) console.log(`📦 Loaded ${newCount} new windows`);
     }
   } catch (e) {
-    console.warn('Window poll failed:', e);
-    showConnStatus('● connection slow');
+    console.warn('Poll failed:', e);
   }
 }
 
@@ -372,21 +397,17 @@ async function sendHeartbeat() {
   }
 }
 
-// ==================== END GAME ====================
+// ==================== END ====================
 async function endGame() {
   running = false;
   clearInterval(flushTimer);
   clearInterval(pollTimer);
   clearInterval(heartbeatTimer);
 
-  // Flush remaining events
   await flushEvents();
 
-  // Mark leftover targets as misses (local display only — server recomputes)
   activeNumbers.forEach(p => {
-    if (!p.done && p.isTarget) {
-      displayTally.misses++;
-    }
+    if (!p.done && p.isTarget) displayTally.misses++;
     p.el.remove();
   });
   activeNumbers = [];
@@ -397,36 +418,30 @@ async function endGame() {
   document.getElementById('track').classList.remove('on');
   document.getElementById('liveTally').classList.remove('on');
 
-  // Ask server to finalize
+  // Show loading state while finalizing
+  document.getElementById('summary').innerHTML = `
+    <h1>Verifying…</h1>
+    <p class="lede">Server is calculating your final score.</p>
+  `;
+  document.getElementById('summary').style.display = 'block';
+
   try {
     const finish = await voddicFetch('/game/finish/', {
       method: 'POST',
       body: JSON.stringify({ session_token: sessionToken })
     });
-    console.log('Finish response:', finish);
+    console.log('Finish:', finish);
 
     if (finish.status === 'PENDING') {
-      showPending();
       pollForResult();
     } else {
       showResult(finish);
     }
   } catch (e) {
     console.error('Finish failed:', e);
-    showResult({
-      final_score: 0, correct: 0, wrong: 0, missed: 0,
-      accuracy: 0, avg_reaction_ms: 0, prize_eligible: false,
-      integrity_status: 'UNKNOWN'
-    });
+    // Even if finish fails, try polling the result
+    pollForResult();
   }
-}
-
-function showPending() {
-  document.getElementById('summary').innerHTML = `
-    <h1>Verifying…</h1>
-    <p class="lede">Server is finalizing your result. Please wait.</p>
-  `;
-  document.getElementById('summary').style.display = 'block';
 }
 
 async function pollForResult() {
@@ -438,11 +453,17 @@ async function pollForResult() {
       if (res.status === 'FINALIZED') {
         clearInterval(poll);
         showResult(res);
+        return;
       }
-    } catch (e) {}
+    } catch (e) { /* keep polling */ }
+    
     if (attempts > 30) {
       clearInterval(poll);
-      showResult({ final_score: 0, correct: 0, wrong: 0, missed: 0, accuracy: 0, avg_reaction_ms: 0, prize_eligible: false, integrity_status: 'TIMEOUT' });
+      showResult({
+        final_score: 0, correct: 0, wrong: 0, missed: 0,
+        accuracy: 0, avg_reaction_ms: 0, prize_eligible: false,
+        integrity_status: 'TIMEOUT'
+      });
     }
   }, 2000);
 }
@@ -460,20 +481,15 @@ function showResult(r) {
     <div class="row"><span>Avg reaction</span><span class="v">${r.avg_reaction_ms ?? 0} ms</span></div>
     <div class="row"><span>Prize eligible</span><span class="v">${r.prize_eligible ? '✅ Yes' : '— Not eligible'}</span></div>
     <p class="footnote">Integrity: ${r.integrity_status || 'VALID'}</p>
-    <button class="btn secondary" onclick="window.parent.postMessage({type:'voddic_game_complete',result:${JSON.stringify(r)}},'*')" style="margin-top:8px;">Back to Arena</button>
+    <button class="btn secondary" onclick="window.parent.postMessage({type:'voddic_game_complete'},'*')" style="margin-top:12px;">Back to Arena</button>
   `;
   summary.style.display = 'block';
 
-  // Notify parent
   if (window.parent !== window) {
-    window.parent.postMessage({
-      type: 'voddic_game_complete',
-      result: r
-    }, '*');
+    window.parent.postMessage({ type: 'voddic_game_complete', result: r }, '*');
   }
 }
 
-// ==================== INIT ====================
 initIntro();
 console.log('Number Watch loaded — waiting for auth…');
 })();
